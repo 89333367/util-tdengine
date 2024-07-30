@@ -28,35 +28,13 @@ import java.util.concurrent.locks.ReentrantLock;
 public enum TDengineUtil implements Serializable, Closeable {
     INSTANCE;
     private Log log = LogFactory.get();
-    private StringBuilder sqlCache = new StringBuilder();
-    private DataSource dataSource;
-    private ThreadPoolExecutor threadPoolExecutor;
-    private int maxSqlLength = 1024 * 512;
-    private int maxPoolSize = 1;
-    private int maxWorkQueue = 1;
-    private String insertPre = "INSERT INTO";
-    private ReentrantLock lock = new ReentrantLock();
-
 
     /**
-     * 设置数据源
+     * 获得工具类工厂
      *
-     * @param dataSource
      * @return
      */
-    public TDengineUtil setDataSource(DataSource dataSource) {
-        this.dataSource = dataSource;
-        return INSTANCE;
-    }
-
-    /**
-     * 设置最大线程数
-     *
-     * @param maxPoolSize
-     * @return
-     */
-    public TDengineUtil setMaxPoolSize(int maxPoolSize) {
-        this.maxPoolSize = maxPoolSize;
+    public static TDengineUtil builder() {
         return INSTANCE;
     }
 
@@ -84,6 +62,33 @@ public enum TDengineUtil implements Serializable, Closeable {
     }
 
     /**
+     * 回收资源，等待sql缓存和所有线程队列执行完毕
+     */
+    @Override
+    public void close() {
+        log.debug("准备回收资源");
+        awaitExecution();
+        threadPoolExecutor.shutdown();
+        try {
+            threadPoolExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        } catch (InterruptedException e) {
+            log.error("回收资源出现中断异常 {}", e.getMessage());
+        } catch (Exception e) {
+            log.error("回收资源出现异常 {}", e.getMessage());
+        }
+        log.debug("资源回收完毕");
+    }
+
+    private StringBuilder sqlCache = new StringBuilder();
+    private DataSource dataSource;
+    private ThreadPoolExecutor threadPoolExecutor;
+    private int maxSqlLength = 1024 * 512;
+    private int maxPoolSize = 1;
+    private int maxWorkQueue = 1;
+    private String insertPre = "INSERT INTO";
+    private ReentrantLock lock = new ReentrantLock();
+
+    /**
      * ResultSet回调
      */
     public interface ResultSetCallback {
@@ -93,6 +98,29 @@ public enum TDengineUtil implements Serializable, Closeable {
          * @param resultSet 结果集
          */
         void exec(ResultSet resultSet) throws SQLException;
+    }
+
+
+    /**
+     * 设置数据源
+     *
+     * @param dataSource
+     * @return
+     */
+    public TDengineUtil setDataSource(DataSource dataSource) {
+        this.dataSource = dataSource;
+        return INSTANCE;
+    }
+
+    /**
+     * 设置最大线程数
+     *
+     * @param maxPoolSize
+     * @return
+     */
+    public TDengineUtil setMaxPoolSize(int maxPoolSize) {
+        this.maxPoolSize = maxPoolSize;
+        return INSTANCE;
     }
 
 
@@ -327,21 +355,5 @@ public enum TDengineUtil implements Serializable, Closeable {
         }
     }
 
-    /**
-     * 回收资源，等待sql缓存和所有线程队列执行完毕
-     */
-    @Override
-    public void close() {
-        log.debug("准备回收资源");
-        awaitExecution();
-        threadPoolExecutor.shutdown();
-        try {
-            threadPoolExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-        } catch (InterruptedException e) {
-            log.error("回收资源出现中断异常 {}", e.getMessage());
-        } catch (Exception e) {
-            log.error("回收资源出现异常 {}", e.getMessage());
-        }
-        log.debug("资源回收完毕");
-    }
+
 }

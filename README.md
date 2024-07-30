@@ -108,7 +108,7 @@ void t001() {
     DataSource dataSource = new HikariDataSource(config);
 
     //初始化，应用全局只需要初始化一个即可
-    TDengineUtil tdUtil = TDengineUtil.INSTANCE.setDataSource(dataSource).setMaxPoolSize(5).build();
+    TDengineUtil tdUtil = TDengineUtil.builder().setDataSource(dataSource).setMaxPoolSize(5).build();
 
     //多线程，模拟N张表并发写入
     Date d = DateUtil.parse("2023-01-01");
@@ -154,7 +154,7 @@ void t002() {
    DataSource dataSource = new HikariDataSource(config);
 
    //初始化，应用全局只需要初始化一个即可
-   TDengineUtil tdUtil = TDengineUtil.INSTANCE.setDataSource(dataSource).setMaxPoolSize(5).build();
+   TDengineUtil tdUtil = TDengineUtil.builder().setDataSource(dataSource).setMaxPoolSize(5).build();
 
    //查询可以自己使用resultSet回调，自己处理更灵活
    tdUtil.executeQuery("select * from testdb2.t limit 10", resultSet -> {
@@ -345,7 +345,7 @@ public class Tests {
    static ClassPathXmlApplicationContext applicationContext = new ClassPathXmlApplicationContext("classpath*:spring-*.xml");
    //全局只需要创建一个
    static DataSource dataSource = applicationContext.getBean(DataSource.class);
-   static TDengineUtil tdUtil = TDengineUtil.INSTANCE.setDataSource(dataSource).setMaxPoolSize(5).build();
+   static TDengineUtil tdUtil = TDengineUtil.builder().setDataSource(dataSource).setMaxPoolSize(5).build();
 
    public static void main(String[] args) {
       SparkConf conf = new SparkConf().setAppName("Spark Local Example").setMaster("local[*]");

@@ -32,7 +32,7 @@ public class TestTDengineUtil {
         DataSource dataSource = new HikariDataSource(config);
 
         //初始化，应用全局只需要初始化一个即可
-        TDengineUtil tdUtil = TDengineUtil.INSTANCE.setDataSource(dataSource).setMaxPoolSize(5).build();
+        TDengineUtil tdUtil = TDengineUtil.builder().setDataSource(dataSource).setMaxPoolSize(5).build();
 
         //多线程，模拟N张表并发写入
         Date d = DateUtil.parse("2023-01-01");
@@ -63,7 +63,7 @@ public class TestTDengineUtil {
         DataSource dataSource = new HikariDataSource(config);
 
         //初始化，应用全局只需要初始化一个即可
-        TDengineUtil tdUtil = TDengineUtil.INSTANCE.setDataSource(dataSource).setMaxPoolSize(5).build();
+        TDengineUtil tdUtil = TDengineUtil.builder().setDataSource(dataSource).setMaxPoolSize(5).build();
 
         //查询可以自己使用resultSet回调，自己处理更灵活
         tdUtil.executeQuery("select * from testdb2.t limit 10", resultSet -> {
@@ -100,7 +100,7 @@ public class TestTDengineUtil {
         DataSource dataSource = new HikariDataSource(config);
 
         //初始化，应用全局只需要初始化一个即可
-        TDengineUtil tdUtil = TDengineUtil.INSTANCE.setDataSource(dataSource).setMaxPoolSize(5).build();
+        TDengineUtil tdUtil = TDengineUtil.builder().setDataSource(dataSource).setMaxPoolSize(5).build();
         while (true) {
             List<Map<String, Object>> list = tdUtil.executeQuery("select table_name from information_schema.ins_tables where db_name='testdb2' limit 10000");
             if (CollUtil.isEmpty(list)) {
