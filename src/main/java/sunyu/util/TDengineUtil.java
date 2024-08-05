@@ -25,59 +25,9 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @author 孙宇
  */
-public enum TDengineUtil implements Serializable, Closeable {
-    INSTANCE;
+public class TDengineUtil implements Serializable, Closeable {
     private Log log = LogFactory.get();
 
-    /**
-     * 获得工具类工厂
-     *
-     * @return
-     */
-    public static TDengineUtil builder() {
-        return INSTANCE;
-    }
-
-    /**
-     * 构建工具类
-     *
-     * @return
-     */
-    public TDengineUtil build() {
-        if (dataSource == null) {
-            threadPoolExecutor = ExecutorBuilder.create()
-                    .setCorePoolSize(0)
-                    .setMaxPoolSize(maxPoolSize)
-                    .setWorkQueue(new LinkedBlockingQueue<>(maxWorkQueue))
-                    .setHandler(new BlockPolicy(runnable -> {
-                        log.error("向线程的阻塞队列put数据出现了异常");
-                    }))
-                    .build();
-            log.debug("数据源:{}", dataSource);
-            log.debug("最大线程数量 {}", maxPoolSize);
-            log.debug("线程最大工作队列 {}", maxWorkQueue);
-            log.debug("TDengineUtil初始化完毕");
-        }
-        return INSTANCE;
-    }
-
-    /**
-     * 回收资源，等待sql缓存和所有线程队列执行完毕
-     */
-    @Override
-    public void close() {
-        log.debug("准备回收资源");
-        awaitExecution();
-        threadPoolExecutor.shutdown();
-        try {
-            threadPoolExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-        } catch (InterruptedException e) {
-            log.error("回收资源出现中断异常 {}", e.getMessage());
-        } catch (Exception e) {
-            log.error("回收资源出现异常 {}", e.getMessage());
-        }
-        log.debug("资源回收完毕");
-    }
 
     private StringBuilder sqlCache = new StringBuilder();
     private DataSource dataSource;
@@ -97,7 +47,7 @@ public enum TDengineUtil implements Serializable, Closeable {
          *
          * @param resultSet 结果集
          */
-        void exec(ResultSet resultSet) throws SQLException;
+        void exec(ResultSet resultSet) throws Exception;
     }
 
 
@@ -109,7 +59,7 @@ public enum TDengineUtil implements Serializable, Closeable {
      */
     public TDengineUtil setDataSource(DataSource dataSource) {
         this.dataSource = dataSource;
-        return INSTANCE;
+        return this;
     }
 
     /**
@@ -120,7 +70,7 @@ public enum TDengineUtil implements Serializable, Closeable {
      */
     public TDengineUtil setMaxPoolSize(int maxPoolSize) {
         this.maxPoolSize = maxPoolSize;
-        return INSTANCE;
+        return this;
     }
 
 
@@ -353,6 +303,90 @@ public enum TDengineUtil implements Serializable, Closeable {
         } finally {
             lock.unlock();
         }
+    }
+
+
+    /**
+     * 私有构造，避免外部初始化
+     */
+    private TDengineUtil() {
+    }
+
+    /**
+     * 获得工具类工厂
+     *
+     * @return
+     */
+    public static TDengineUtil builder() {
+        return new TDengineUtil();
+    }
+
+
+    public TDengineUtil build(DataSource dataSource) {
+        log.info("构建工具类开始");
+
+        if (dataSource == null) {
+            throw new RuntimeException("数据源参数异常，未正确传递数据源参数");
+        }
+        this.dataSource = dataSource;
+
+        if (threadPoolExecutor == null) {
+            log.info("创建线程池开始");
+            threadPoolExecutor = ExecutorBuilder.create()
+                    .setCorePoolSize(0)
+                    .setMaxPoolSize(maxPoolSize)
+                    .setWorkQueue(new LinkedBlockingQueue<>(maxWorkQueue))
+                    .setHandler(new BlockPolicy(runnable -> {
+                        log.error("向线程的阻塞队列put数据出现了异常");
+                    }))
+                    .build();
+            log.info("创建线程池完毕");
+            log.info("数据源 {}", this.dataSource);
+            log.info("最大线程数量 {}", maxPoolSize);
+            log.info("线程最大工作队列 {}", maxWorkQueue);
+        } else {
+            log.warn("构建工具类失败，不要重复构建");
+        }
+        log.info("构建工具类完毕");
+        return this;
+    }
+
+    /**
+     * 构建工具类
+     *
+     * @return
+     */
+    public TDengineUtil build() {
+        return build(dataSource);
+    }
+
+    /**
+     * 回收资源，等待sql缓存和所有线程队列执行完毕
+     */
+    @Override
+    public void close() {
+        log.info("销毁工具类开始");
+        log.info("等待sql缓存执行开始");
+        awaitExecution();
+        log.info("等待sql缓存执行完毕");
+        log.info("关闭线程池开始");
+        threadPoolExecutor.shutdown();
+        try {
+            threadPoolExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+            log.info("关闭线程池完毕");
+        } catch (InterruptedException e) {
+            log.error("回收资源出现中断异常 {}", e.getMessage());
+        } catch (Exception e) {
+            log.error("回收资源出现异常 {}", e.getMessage());
+        }
+        sqlCache.setLength(0);
+        dataSource = null;
+        threadPoolExecutor = null;
+        maxSqlLength = 1024 * 512;
+        maxPoolSize = 1;
+        maxWorkQueue = 1;
+        insertPre = "INSERT INTO";
+        log.info("销毁工具类完毕");
     }
 
 

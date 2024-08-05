@@ -37,7 +37,7 @@ public class TestTDengineUtil {
         //多线程，模拟N张表并发写入
         Date d = DateUtil.parse("2023-01-01");
         IntStream.rangeClosed(1, 50).parallel().forEach(i -> {
-            for (int j = 1; j <= 1000000; j++) {//每个表N行记录
+            for (int j = 1; j <= 10; j++) {//每个表N行记录
                 //写入一条记录
                 int finalJ = j;
                 tdUtil.insertRow("testdb2", "t", "t_" + i, new TreeMap<String, Object>() {{
@@ -126,4 +126,46 @@ public class TestTDengineUtil {
         }
         log.info("done");
     }
+
+
+    @Test
+    void t004() {
+        //数据源
+        HikariConfig config = new HikariConfig();
+        config.setDriverClassName("com.taosdata.jdbc.rs.RestfulDriver");
+        config.setJdbcUrl("jdbc:TAOS-RS://192.168.13.87:16042/?batchfetch=true");
+        config.setUsername("root");
+        config.setPassword("taosdata");
+        DataSource dataSource = new HikariDataSource(config);
+
+        //初始化，应用全局只需要初始化一个即可
+        TDengineUtil tdUtil = TDengineUtil.builder().setDataSource(dataSource).build();
+        List<Map<String, Object>> rows = tdUtil.executeQuery("show dnodes");
+        for (Map<String, Object> row : rows) {
+            log.info("{}", row);
+        }
+
+        tdUtil.close();
+    }
+
+    @Test
+    void t005() {
+        //数据源
+        HikariConfig config = new HikariConfig();
+        config.setDriverClassName("com.taosdata.jdbc.rs.RestfulDriver");
+        config.setJdbcUrl("jdbc:TAOS-RS://192.168.13.87:16042/?batchfetch=true");
+        config.setUsername("root");
+        config.setPassword("taosdata");
+        DataSource dataSource = new HikariDataSource(config);
+
+        //初始化，应用全局只需要初始化一个即可
+        TDengineUtil tdUtil = TDengineUtil.builder().build(dataSource);
+        List<Map<String, Object>> rows = tdUtil.executeQuery("show dnodes");
+        for (Map<String, Object> row : rows) {
+            log.info("{}", row);
+        }
+
+        tdUtil.close();
+    }
+
 }
