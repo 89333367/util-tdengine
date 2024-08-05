@@ -344,10 +344,10 @@ public class TDengineUtil implements Serializable, Closeable {
             log.info("数据源 {}", this.dataSource);
             log.info("最大线程数量 {}", maxPoolSize);
             log.info("线程最大工作队列 {}", maxWorkQueue);
+            log.info("构建工具类完毕");
         } else {
             log.warn("工具类已构建，请不要重复构建");
         }
-        log.info("构建工具类完毕");
         return this;
     }
 
