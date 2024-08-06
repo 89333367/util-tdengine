@@ -325,29 +325,31 @@ public class TDengineUtil implements Serializable, Closeable {
     public TDengineUtil build(DataSource dataSource) {
         log.info("构建工具类开始");
 
+        if (threadPoolExecutor != null) {
+            log.warn("工具类已构建，请不要重复构建");
+            return this;
+        }
+
         if (dataSource == null) {
             throw new RuntimeException("数据源参数异常，未正确传递数据源参数");
         }
+        log.info("设置数据源开始");
         this.dataSource = dataSource;
-
-        if (threadPoolExecutor == null) {
-            log.info("创建线程池开始");
-            threadPoolExecutor = ExecutorBuilder.create()
-                    .setCorePoolSize(0)
-                    .setMaxPoolSize(maxPoolSize)
-                    .setWorkQueue(new LinkedBlockingQueue<>(maxWorkQueue))
-                    .setHandler(new BlockPolicy(runnable -> {
-                        log.error("向线程的阻塞队列put数据出现了异常");
-                    }))
-                    .build();
-            log.info("创建线程池完毕");
-            log.info("数据源 {}", this.dataSource);
-            log.info("最大线程数量 {}", maxPoolSize);
-            log.info("线程最大工作队列 {}", maxWorkQueue);
-            log.info("构建工具类完毕");
-        } else {
-            log.warn("工具类已构建，请不要重复构建");
-        }
+        log.info("设置数据源结束");
+        log.info("创建线程池开始");
+        threadPoolExecutor = ExecutorBuilder.create()
+                .setCorePoolSize(0)
+                .setMaxPoolSize(maxPoolSize)
+                .setWorkQueue(new LinkedBlockingQueue<>(maxWorkQueue))
+                .setHandler(new BlockPolicy(runnable -> {
+                    log.error("向线程的阻塞队列put数据出现了异常");
+                }))
+                .build();
+        log.info("创建线程池完毕");
+        log.info("数据源 {}", this.dataSource);
+        log.info("最大线程数量 {}", maxPoolSize);
+        log.info("线程最大工作队列 {}", maxWorkQueue);
+        log.info("构建工具类完毕");
         return this;
     }
 
