@@ -101,21 +101,20 @@ public class TDengineUtil implements Serializable, Closeable {
         }
     }
 
-
     /**
-     * 写入多行数据
+     * 写入一行数据
      * <p>
-     * 多行数据会写入到同一个表中，会先写入sql缓存，如果sql缓存超出大小，则会放入执行队列，由多线程执行sql
+     * 会先写入sql缓存，如果sql缓存超出大小，则会放入执行队列，由多线程执行sql
      *
      * @param databaseName 数据库名称
      * @param superTable   超级表名称
-     * @param tableName    表名
-     * @param rows         多行数据内容
+     * @param tableName    表名称
+     * @param row          一行数据内容
      */
-    public void insertRows(String databaseName, String superTable, String tableName, List<TreeMap<String, Object>> rows) {
-        for (TreeMap<String, Object> row : rows) {
-            insertRow(databaseName, superTable, tableName, row);
-        }
+    public void insertRow(String databaseName, String superTable, String tableName, Map<String, Object> row) {
+        insertRow(databaseName, superTable, tableName, new TreeMap<String, Object>() {{
+            putAll(row);
+        }});
     }
 
     private String getSubSql(String databaseName, String superTable, String tableName, TreeMap<String, Object> row) {

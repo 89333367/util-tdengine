@@ -109,7 +109,7 @@ public List<Map<String, Object>> executeQuery(String sql)
 public void insertRow(String databaseName, String superTable, String tableName, TreeMap<String, Object> row)
 
 // 可以一次写入一个多行数据
-public void insertRows(String databaseName, String superTable, String tableName, List<TreeMap<String, Object>> rows)
+public void insertRow(String databaseName, String superTable, String tableName, Map<String, Object> row)
 
 // 等待缓存写入
 public void awaitExecution()
