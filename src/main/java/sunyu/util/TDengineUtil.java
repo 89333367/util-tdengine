@@ -54,22 +54,22 @@ public class TDengineUtil implements Serializable, Closeable {
     /**
      * 设置数据源
      *
-     * @param dataSource
+     * @param ds
      * @return
      */
-    public TDengineUtil setDataSource(DataSource dataSource) {
-        this.dataSource = dataSource;
+    public TDengineUtil dataSource(DataSource ds) {
+        this.dataSource = ds;
         return this;
     }
 
     /**
      * 设置最大线程数
      *
-     * @param maxPoolSize
+     * @param size
      * @return
      */
-    public TDengineUtil setMaxPoolSize(int maxPoolSize) {
-        this.maxPoolSize = maxPoolSize;
+    public TDengineUtil maxPoolSize(int size) {
+        this.maxPoolSize = size;
         return this;
     }
 
