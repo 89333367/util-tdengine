@@ -75,6 +75,18 @@ public class TDengineUtil implements Serializable, Closeable {
 
 
     /**
+     * 设置最大阻塞队列数
+     *
+     * @param size
+     * @return
+     */
+    public TDengineUtil maxWorkQueue(int size) {
+        this.maxWorkQueue = size;
+        return this;
+    }
+
+
+    /**
      * 写入一行数据
      * <p>
      * 会先写入sql缓存，如果sql缓存超出大小，则会放入执行队列，由多线程执行sql
