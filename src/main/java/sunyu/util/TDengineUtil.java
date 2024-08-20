@@ -313,7 +313,7 @@ public class TDengineUtil implements Serializable, Closeable {
             if (threadPoolExecutor.getActiveCount() == 0 && threadPoolExecutor.getQueue().isEmpty()) {
                 break;
             }
-            ThreadUtil.sleep(1000);
+            ThreadUtil.sleep(100);
         }
     }
 
