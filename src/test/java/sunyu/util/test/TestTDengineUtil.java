@@ -1,7 +1,11 @@
 package sunyu.util.test;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.date.DateField;
+import cn.hutool.core.date.DatePattern;
+import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.io.resource.ResourceUtil;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.log.Log;
@@ -167,5 +171,65 @@ public class TestTDengineUtil {
 
         tdUtil.close();
     }
+
+
+    @Test
+    void t006() {
+        HikariConfig config = new HikariConfig();
+        config.setDriverClassName("com.taosdata.jdbc.rs.RestfulDriver");
+        config.setJdbcUrl("jdbc:TAOS-RS://172.16.1.173:16041/?batchfetch=true");
+        config.setUsername("root");
+        config.setPassword("taosdata");
+        DataSource dataSource = new HikariDataSource(config);
+
+        //初始化，应用全局只需要初始化一个即可
+        TDengineUtil tdUtil = TDengineUtil.builder().build(dataSource);
+
+        for (DateTime dateTime : DateUtil.rangeToList(DateUtil.parse("2024-08-20"), DateUtil.parse("2024-08-21"), DateField.DAY_OF_YEAR)) {
+            //log.info("{} {}", dateTime.toString("yyyy-MM-dd"), DateUtil.endOfMonth(dateTime).toString("yyyy-MM-dd"));
+            String sql = "select to_char(`3014`,'yyyyMMddHH24miss') time,`protocol` from frequent.d_p where did = 'NJ4GNBZAX0000172' and `3014` between '" + dateTime.toString("yyyy-MM-dd") + "' and '" + DateUtil.endOfDay(dateTime).toString("yyyy-MM-dd HH:mm:ss") + "'";
+            List<Map<String, Object>> rows = tdUtil.executeQuery(sql);
+            rows.forEach(row -> {
+                if (!row.get("protocol").toString().contains(row.get("time").toString())) {
+                    //log.error("{} {}", row.get("time"), row.get("protocol"));
+                    System.out.println(row.get("protocol"));
+                }
+            });
+        }
+    }
+
+    @Test
+    void t007() {
+        for (DateTime dateTime : DateUtil.rangeToList(DateUtil.parse("2024-01-01"), DateUtil.parse("2024-08-22"), DateField.MONTH)) {
+            log.info("{} {}", dateTime.toString("yyyy-MM-dd"), DateUtil.endOfMonth(dateTime).toString("yyyy-MM-dd"));
+        }
+    }
+
+
+    @Test
+    void t008() {
+        HikariConfig config = new HikariConfig();
+        config.setDriverClassName("com.taosdata.jdbc.rs.RestfulDriver");
+        config.setJdbcUrl("jdbc:TAOS-RS://172.16.1.173:16041/?batchfetch=true");
+        config.setUsername("root");
+        config.setPassword("taosdata");
+        DataSource dataSource = new HikariDataSource(config);
+
+        //初始化，应用全局只需要初始化一个即可
+        TDengineUtil tdUtil = TDengineUtil.builder().build(dataSource);
+
+        for (String row : ResourceUtil.readUtf8Str("protocol.txt").split("\\n")) {
+            long t = DateUtil.parse(row.split("3014:")[1].substring(0, 14), DatePattern.PURE_DATETIME_PATTERN).getTime() * 1000;
+
+            tdUtil.insertRow("frequent", "d_p", "test_d_p", new TreeMap<String, Object>() {{
+                put("3014", t);
+                put("protocol", row);
+            }});
+        }
+
+        tdUtil.awaitExecution();
+        tdUtil.close();
+    }
+
 
 }
