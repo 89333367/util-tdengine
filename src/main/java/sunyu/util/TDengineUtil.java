@@ -1,5 +1,6 @@
 package sunyu.util;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.convert.Convert;
 import cn.hutool.core.thread.BlockPolicy;
 import cn.hutool.core.thread.ExecutorBuilder;
@@ -12,7 +13,10 @@ import javax.sql.DataSource;
 import java.io.Closeable;
 import java.io.Serializable;
 import java.sql.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -28,13 +32,12 @@ import java.util.concurrent.locks.ReentrantLock;
 public class TDengineUtil implements Serializable, Closeable {
     private Log log = LogFactory.get();
 
-
     private StringBuilder sqlCache = new StringBuilder();
     private DataSource dataSource;
     private ThreadPoolExecutor threadPoolExecutor;
     private int maxSqlLength = 1024 * 512;
-    private int maxPoolSize = 1;
-    private int maxWorkQueue = 5;
+    private int maxPoolSize = 10;
+    private int maxWorkQueue = 10;
     private String insertPre = "INSERT INTO";
     private ReentrantLock lock = new ReentrantLock();
 
@@ -96,7 +99,7 @@ public class TDengineUtil implements Serializable, Closeable {
      * @param tableName    表名称
      * @param row          一行数据内容
      */
-    public void insertRow(String databaseName, String superTable, String tableName, TreeMap<String, Object> row) {
+    public void insertRow(String databaseName, String superTable, String tableName, Map<String, Object> row) {
         try {
             lock.lock();
             String subSql = getSubSql(databaseName, superTable, tableName, row);
@@ -113,47 +116,25 @@ public class TDengineUtil implements Serializable, Closeable {
         }
     }
 
-    /**
-     * 写入一行数据
-     * <p>
-     * 会先写入sql缓存，如果sql缓存超出大小，则会放入执行队列，由多线程执行sql
-     *
-     * @param databaseName 数据库名称
-     * @param superTable   超级表名称
-     * @param tableName    表名称
-     * @param row          一行数据内容
-     */
-    public void insertRow(String databaseName, String superTable, String tableName, Map<String, Object> row) {
-        insertRow(databaseName, superTable, tableName, new TreeMap<String, Object>() {{
-            putAll(row);
-        }});
-    }
-
-    private String getSubSql(String databaseName, String superTable, String tableName, TreeMap<String, Object> row) {
-        //最终拼装后的格式：
-        // `databaseName`.`superTableName` (`tbname`,`column1`,`tag1`) values ('表名','列值','标签值')
-        StringBuilder subSqlCache = new StringBuilder();
-        // `databaseName`.`superTableName` (`tbname`
-        subSqlCache.append(StrUtil.format(" `{}`.`{}` (`tbname`", databaseName, superTable));
-        //,`column1`,`tag1`
+    private String getSubSql(String databaseName, String superTable, String tableName, Map<String, Object> row) {
+        List columnNames = new ArrayList();
+        List columnValues = new ArrayList();
         row.forEach((key, value) -> {
-            subSqlCache.append(StrUtil.format(",`{}`", key));
-        });
-        //) values
-        subSqlCache.append(") values ");
-        //('表名'
-        subSqlCache.append(StrUtil.format("('{}'", tableName));
-        //,'列值','标签值'
-        row.forEach((key, value) -> {
+            columnNames.add("`" + key + "`");
             if (value != null) {
-                subSqlCache.append(StrUtil.format(",'{}'", Convert.toStr(value)));
+                columnValues.add("'" + Convert.toStr(value) + "'");
             } else {
-                subSqlCache.append(",null");
+                columnValues.add(null);
             }
         });
-        //)
-        subSqlCache.append(")");
-        return subSqlCache.toString();
+        //最终拼装后的格式(注意前面要留个空格)：
+        // `databaseName`.`superTableName` (`tbname`,`column1`,`tag1` ,...) values ('表名','列值1','标签值1' ,...)
+        String subSql = StrUtil.format(" `" + databaseName + "`.`" + superTable + "` (`tbname`,{}) values ('" + tableName + "',{})"
+                , CollUtil.join(columnNames, ",")
+                , CollUtil.join(columnValues, ",")
+        );
+        //log.debug(subSql);
+        return subSql;
     }
 
     /**
@@ -409,8 +390,8 @@ public class TDengineUtil implements Serializable, Closeable {
         dataSource = null;
         threadPoolExecutor = null;
         maxSqlLength = 1024 * 512;
-        maxPoolSize = 1;
-        maxWorkQueue = 5;
+        maxPoolSize = 10;
+        maxWorkQueue = 10;
         insertPre = "INSERT INTO";
         log.info("销毁工具类完毕");
     }
