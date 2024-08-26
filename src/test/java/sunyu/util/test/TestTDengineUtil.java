@@ -10,6 +10,7 @@ import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.taosdata.jdbc.TSDBDriver;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.Test;
@@ -57,7 +58,7 @@ public class TestTDengineUtil {
     }
 
     @Test
-    void t002() {
+    void t002() throws Exception {
         //数据源
         HikariConfig config = new HikariConfig();
         config.setDriverClassName("com.taosdata.jdbc.rs.RestfulDriver");
@@ -94,7 +95,7 @@ public class TestTDengineUtil {
     }
 
     @Test
-    void t003() {
+    void t003() throws Exception {
         //数据源
         HikariConfig config = new HikariConfig();
         config.setDriverClassName("com.taosdata.jdbc.rs.RestfulDriver");
@@ -133,7 +134,7 @@ public class TestTDengineUtil {
 
 
     @Test
-    void t004() {
+    void t004() throws Exception {
         //数据源
         HikariConfig config = new HikariConfig();
         config.setDriverClassName("com.taosdata.jdbc.rs.RestfulDriver");
@@ -153,7 +154,7 @@ public class TestTDengineUtil {
     }
 
     @Test
-    void t005() {
+    void t005() throws Exception {
         //数据源
         HikariConfig config = new HikariConfig();
         config.setDriverClassName("com.taosdata.jdbc.rs.RestfulDriver");
@@ -174,7 +175,7 @@ public class TestTDengineUtil {
 
 
     @Test
-    void t006() {
+    void t006() throws Exception {
         HikariConfig config = new HikariConfig();
         config.setDriverClassName("com.taosdata.jdbc.rs.RestfulDriver");
         config.setJdbcUrl("jdbc:TAOS-RS://172.16.1.173:16041/?batchfetch=true");

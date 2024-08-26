@@ -264,7 +264,7 @@ new BigDecimal((Double)row.get("columnName")).toPlainString()
         <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
-            <version>5.1.0</version>
+            <version>4.0.3</version>
         </dependency>
     </dependencies>
 

@@ -143,7 +143,7 @@ public class TDengineUtil implements Serializable, Closeable {
      * @param sql         sql语句
      * @param retry       重试次数，如果为null则无限重试
      * @param sleepMillis 重试睡眠间隔，单位毫秒，如果为null，则间隔时间为1000*5毫秒
-     * @return 响应数量
+     * @return 响应数量，如果返回-1，则代表更新异常
      */
     public int executeUpdate(String sql, Integer retry, Integer sleepMillis) {
         //log.debug("Executing SQL: {}", sql);
@@ -170,11 +170,9 @@ public class TDengineUtil implements Serializable, Closeable {
      * @param sql      sql语句
      * @param callback 回调函数
      */
-    public void executeQuery(String sql, ResultSetCallback callback) {
+    public void executeQuery(String sql, ResultSetCallback callback) throws Exception {
         try (Connection conn = dataSource.getConnection(); Statement stmt = conn.createStatement(); ResultSet resultSet = stmt.executeQuery(sql);) {
             callback.exec(resultSet);
-        } catch (Exception e) {
-            log.error("查询sql语句出错: {} {}", e.getMessage(), sql);
         }
     }
 
@@ -184,7 +182,7 @@ public class TDengineUtil implements Serializable, Closeable {
      * @param sql sql语句
      * @return 查询结果
      */
-    public List<Map<String, Object>> executeQuery(String sql) {
+    public List<Map<String, Object>> executeQuery(String sql) throws Exception {
         List<Map<String, Object>> rows = new ArrayList<>();
         executeQuery(sql, resultSet -> {
             ResultSetMetaData metaData = resultSet.getMetaData();
