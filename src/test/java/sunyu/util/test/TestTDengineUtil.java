@@ -241,9 +241,11 @@ public class TestTDengineUtil {
         config.setPassword("taosdata");
         DataSource dataSource = new HikariDataSource(config);
         TDengineUtil tdUtil = TDengineUtil.builder().build(dataSource);
-        for (Map<String, Object> m : tdUtil.executeQuery("select table_name from information_schema.ins_tables where db_name='frequent' and table_name like 'v_c_%'", null, null)) {
-            log.info("{}", m.get("table_name"));
-            tdUtil.executeUpdate(StrUtil.format("select last(`4163`),last(`4592`) from frequent.`{}`", m.get("table_name")), null, null);
+        List<Map<String, Object>> rows = tdUtil.executeQuery("select table_name from information_schema.ins_tables where db_name='frequent' and table_name like 'v_c_%'", null, null);
+        for (int i = 0; i < rows.size(); i++) {
+            log.info("{}/{}", (i + 1), rows.size());
+            Map<String, Object> m = rows.get(i);
+            tdUtil.executeUpdate(StrUtil.format("select last(`4163`),last(`4592`),vin,last(`did`) from frequent.`{}`", m.get("table_name")), null, null);
         }
         tdUtil.close();
     }
