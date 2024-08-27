@@ -179,6 +179,30 @@ public class TDengineUtil implements Serializable, Closeable {
     /**
      * 查询sql语句
      *
+     * @param sql         sql语句
+     * @param retry       重试次数，如果为null则无限重试
+     * @param sleepMillis 重试睡眠间隔，单位毫秒，如果为null，则间隔时间为1000*5毫秒
+     * @return 查询结果
+     */
+    public List<Map<String, Object>> executeQuery(String sql, Integer retry, Integer sleepMillis) {
+        while (retry == null || retry-- > 0) {
+            try {
+                return executeQuery(sql);
+            } catch (Exception e) {
+                log.error("查询sql语句出错: {} {}", e.getMessage(), sql);
+                if (sleepMillis != null) {
+                    ThreadUtil.safeSleep(sleepMillis);
+                } else {
+                    ThreadUtil.safeSleep(1000 * 5);
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 查询sql语句
+     *
      * @param sql sql语句
      * @return 查询结果
      */
