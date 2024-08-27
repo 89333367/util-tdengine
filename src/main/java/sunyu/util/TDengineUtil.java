@@ -373,7 +373,7 @@ public class TDengineUtil implements Serializable, Closeable {
                 }))
                 .build();
         log.info("创建线程池完毕");
-        log.info("数据源 {}", this.dataSource);
+        log.info("数据源 {} {}", this.dataSource.getClass().getName(), this.dataSource.hashCode());
         log.info("最大线程数量 {}", maxPoolSize);
         log.info("线程最大工作队列 {}", maxWorkQueue);
         log.info("构建工具类完毕");

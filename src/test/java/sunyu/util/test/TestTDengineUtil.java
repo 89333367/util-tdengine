@@ -10,7 +10,6 @@ import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
-import com.taosdata.jdbc.TSDBDriver;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.Test;
@@ -229,6 +228,22 @@ public class TestTDengineUtil {
         }
 
         tdUtil.awaitExecution();
+        tdUtil.close();
+    }
+
+
+    @Test
+    void t009() throws Exception {
+        //数据源
+        HikariConfig config = new HikariConfig();
+        config.setDriverClassName("com.taosdata.jdbc.rs.RestfulDriver");
+        config.setJdbcUrl("jdbc:TAOS-RS://192.168.13.87:16042/?batchfetch=true");
+        config.setUsername("root");
+        config.setPassword("taosdata");
+        DataSource dataSource = new HikariDataSource(config);
+
+        //初始化，应用全局只需要初始化一个即可
+        TDengineUtil tdUtil = TDengineUtil.builder().build(dataSource);
         tdUtil.close();
     }
 
