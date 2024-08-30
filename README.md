@@ -74,7 +74,7 @@ spring.datasource.driver-class-name=com.taosdata.jdbc.rs.RestfulDriver
 spring.datasource.url=jdbc:TAOS-RS://192.168.13.87:16042/?batchfetch=true
 spring.datasource.username=root
 spring.datasource.password=taosdata
-spring.datasource.hikari.minimum-idle=1
+spring.datasource.hikari.minimum-idle=0
 spring.datasource.hikari.maximum-pool-size=10
 ```
 
@@ -85,7 +85,7 @@ spring.datasource.dynamic.datasource.tdengine.driver-class-name=com.taosdata.jdb
 spring.datasource.dynamic.datasource.tdengine.url=jdbc:TAOS-RS://192.168.13.87:16042/?batchfetch=true
 spring.datasource.dynamic.datasource.tdengine.username=root
 spring.datasource.dynamic.datasource.tdengine.password=taosdata
-spring.datasource.dynamic.hikari.min-idle=1
+spring.datasource.dynamic.hikari.min-idle=0
 spring.datasource.dynamic.hikari.maximum-pool-size=10
 ```
 
@@ -240,7 +240,7 @@ new BigDecimal((Double)row.get("columnName")).toPlainString()
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
-            <version>5.8.29</version>
+            <version>5.8.31</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.apache.spark/spark-core -->
@@ -308,7 +308,7 @@ spring.datasource.driver-class-name=com.taosdata.jdbc.rs.RestfulDriver
 spring.datasource.url=jdbc:TAOS-RS://192.168.13.87:16042/?batchfetch=true
 spring.datasource.username=root
 spring.datasource.password=taosdata
-spring.datasource.hikari.minimum-idle=1
+spring.datasource.hikari.minimum-idle=0
 spring.datasource.hikari.maximum-pool-size=10
 ```
 

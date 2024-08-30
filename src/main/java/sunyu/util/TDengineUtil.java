@@ -36,7 +36,7 @@ public class TDengineUtil implements Serializable, Closeable {
     private DataSource dataSource;
     private ThreadPoolExecutor threadPoolExecutor;
     private int maxSqlLength = 1024 * 512;
-    private int maxPoolSize = 10;
+    private int maxPoolSize = 1;
     private int maxWorkQueue = 10;
     private String insertPre = "INSERT INTO";
     private ReentrantLock lock = new ReentrantLock();
