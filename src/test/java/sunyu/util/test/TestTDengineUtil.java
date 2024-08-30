@@ -292,4 +292,20 @@ public class TestTDengineUtil {
     }
 
 
+    @Test
+    void t009() {
+        HikariConfig config = new HikariConfig();
+        config.setDriverClassName("com.taosdata.jdbc.rs.RestfulDriver");
+        config.setJdbcUrl("jdbc:TAOS-RS://172.16.1.173:16041/?batchfetch=true");
+        config.setUsername("root");
+        config.setPassword("taosdata");
+        DataSource dataSource = new HikariDataSource(config);
+        TDengineUtil tdUtil = TDengineUtil.builder().build(dataSource);
+
+        String sql = "select count(*) c from performance_schema.perf_queries where sql like 'delete from frequent.v_c where %'";
+        List<Map<String, Object>> rows = tdUtil.executeQuery(sql, null, null);
+        log.info("{} {}", rows, rows.size());
+    }
+
+
 }
