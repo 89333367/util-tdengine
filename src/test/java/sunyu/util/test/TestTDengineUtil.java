@@ -7,6 +7,7 @@ import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.resource.ResourceUtil;
 import cn.hutool.core.thread.ThreadUtil;
+import cn.hutool.core.util.ReUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
@@ -233,7 +234,7 @@ public class TestTDengineUtil {
 
 
     @Test
-    void t009() {
+    void 刷新v_c表缓存() {
         HikariConfig config = new HikariConfig();
         config.setDriverClassName("com.taosdata.jdbc.rs.RestfulDriver");
         config.setJdbcUrl("jdbc:TAOS-RS://172.16.1.173:16041/?batchfetch=true");
@@ -248,6 +249,46 @@ public class TestTDengineUtil {
             tdUtil.executeUpdate(StrUtil.format("select last(`4163`),last(`4592`),vin,last(`did`) from frequent.`{}`", m.get("table_name")), null, null);
         }
         tdUtil.close();
+    }
+
+
+    @Test
+    void 修复d_p表时区数据错误() {
+        HikariConfig config = new HikariConfig();
+        config.setDriverClassName("com.taosdata.jdbc.rs.RestfulDriver");
+        config.setJdbcUrl("jdbc:TAOS-RS://172.16.1.173:16041/?batchfetch=true");
+        config.setUsername("root");
+        config.setPassword("taosdata");
+        DataSource dataSource = new HikariDataSource(config);
+        TDengineUtil tdUtil = TDengineUtil.builder().build(dataSource);
+
+        // 从2024-08-21开始补数据，往前补
+        DateTime day = DateUtil.parse("2024-08-21");
+        for (DateTime dateTime : DateUtil.range(DateUtil.beginOfDay(day), DateUtil.endOfDay(day), DateField.HOUR_OF_DAY)) {
+            //log.info("{} {}", dateTime.toString(), dateTime.offsetNew(DateField.HOUR, 1).toString());
+            String sql = StrUtil.format("select `3014`,protocol,tbname from frequent.d_p where `3014` >= '{}' and `3014` < '{}' and protocol nmatch '.*3014:{}.*'"
+                    , dateTime.toString(), dateTime.offsetNew(DateField.HOUR, 1).toString(), dateTime.toString("yyyyMMddHH"));
+            log.debug("{}", sql);
+            for (Map<String, Object> row : tdUtil.executeQuery(sql, null, null)) {
+                String protocol = row.get("protocol").toString();
+                String tbname = row.get("tbname").toString();
+                String p3014 = ReUtil.getGroup1(".*,3014:(\\d{14}).*", protocol);
+                if (StrUtil.isNotBlank(p3014)) {
+                    String delSql = StrUtil.format("delete from frequent.`{}` where _rowts = '{}'", tbname, DateUtil.parse(row.get("3014").toString()).toString("yyyy-MM-dd HH:mm:ss"));
+                    log.info("应该写入 {} 实际上写入了 {} 所以这条要删掉", p3014, row.get("3014"));
+                    log.warn("{}", delSql);
+                    tdUtil.executeUpdate(delSql, null, null);
+                }
+            }
+        }
+
+        tdUtil.close();
+    }
+
+    @Test
+    void 获得3014() {
+        String s = "SUBMIT$7225659615638614016$NJ4GNBZAX0000172$REALTIME$TIME:20240820185900,gw:farm,3004:18,4042:1,4030:2,4031:1,4032:12321.19,4033:2,4040:0,4041:0,4043:0,4044:1,2204:0,2603:26.1885360,2602:113.3193780,3012:0,3013:262,3014:20240820185853,3015:7,3016:9,4014:1,2601:0,3019:0";
+        log.info("{}", ReUtil.getGroup1(".*,3014:(\\d{14}).*", s));
     }
 
 
