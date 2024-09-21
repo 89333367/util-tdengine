@@ -107,7 +107,7 @@ public class TDengineUtil implements Serializable, Closeable {
                 String sql = insertPre + sqlCache.toString();
                 sqlCache.setLength(0);
                 threadPoolExecutor.execute(() -> {
-                    executeUpdate(sql, null, null);
+                    executeUpdate(sql, null, 1000 * 60);
                 });
             }
             sqlCache.append(subSql);

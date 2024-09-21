@@ -42,7 +42,7 @@
 <dependency>
     <groupId>sunyu.util</groupId>
     <artifactId>util-tdengine</artifactId>
-    <version>3.3.0_v1.0</version>
+    <version>3.3.2_v1.0</version>
 </dependency>
 ```
 

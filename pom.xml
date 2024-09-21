@@ -6,7 +6,7 @@
 
     <groupId>sunyu.util</groupId>
     <artifactId>util-tdengine</artifactId>
-    <version>3.3.0_v1.0</version>
+    <version>3.3.2_v1.0</version>
 
     <properties>
         <java.version>1.8</java.version>
@@ -34,13 +34,13 @@
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
-            <version>5.8.31</version>
+            <version>5.8.32</version>
         </dependency>
         <!-- https://central.sonatype.com/artifact/com.taosdata.jdbc/taos-jdbcdriver/versions -->
         <dependency>
             <groupId>com.taosdata.jdbc</groupId>
             <artifactId>taos-jdbcdriver</artifactId>
-            <version>3.3.0</version>
+            <version>3.3.2</version>
             <scope>runtime</scope>
         </dependency>
         <!-- https://central.sonatype.com/artifact/com.zaxxer/HikariCP/versions -->
