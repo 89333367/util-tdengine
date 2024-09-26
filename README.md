@@ -42,7 +42,7 @@
 <dependency>
     <groupId>sunyu.util</groupId>
     <artifactId>util-tdengine</artifactId>
-    <version>3.3.2_v1.0</version>
+    <version>3.3.3_v1.0</version>
 </dependency>
 ```
 
@@ -162,7 +162,9 @@ void t001() {
 tdUtil.executeUpdate("sql语句");
 
 //这里可以传递重试次数和重试间隔时间
-tdUtil.executeUpdate("sql语句",2,1000);
+tdUtil.
+
+executeUpdate("sql语句",2,1000);
 ```
 
 ### 查询sql Demo
@@ -211,10 +213,15 @@ void t002() {
 
 ```java
 //如果是double返回值，有可能会出现科学计数法，可以使用下面方式转成字符串
-new BigDecimal((Double)row.get("columnName")).toPlainString()
+new BigDecimal((Double)row.
+
+get("columnName")).
+
+toPlainString()
 ```
 
 ## Spark Demo
+
 [查看示例源码](https://github.com/89333367/demo-spark-hdfs-to-tdengine)
 
 

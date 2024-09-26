@@ -418,7 +418,7 @@ public class TDengineUtil implements Serializable, Closeable {
         dataSource = null;
         threadPoolExecutor = null;
         maxSqlLength = 1024 * 512;
-        maxPoolSize = 10;
+        maxPoolSize = 1;
         maxWorkQueue = 10;
         insertPre = "INSERT INTO";
         log.info("销毁工具类完毕");
