@@ -30,16 +30,16 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author 孙宇
  */
 public class TDengineUtil implements Serializable, Closeable {
-    private Log log = LogFactory.get();
+    private final Log log = LogFactory.get();
 
-    private StringBuilder sqlCache = new StringBuilder();
+    private final StringBuilder sqlCache = new StringBuilder();
     private DataSource dataSource;
     private ThreadPoolExecutor threadPoolExecutor;
     private int maxSqlLength = 1024 * 512;
     private int maxPoolSize = 1;
     private int maxWorkQueue = 10;
     private String insertPre = "INSERT INTO";
-    private ReentrantLock lock = new ReentrantLock();
+    private final ReentrantLock lock = new ReentrantLock();
 
     /**
      * ResultSet回调
@@ -117,8 +117,8 @@ public class TDengineUtil implements Serializable, Closeable {
     }
 
     private String getSubSql(String databaseName, String superTable, String tableName, Map<String, Object> row) {
-        List columnNames = new ArrayList();
-        List columnValues = new ArrayList();
+        List<String> columnNames = new ArrayList<>();
+        List<String> columnValues = new ArrayList<>();
         row.forEach((key, value) -> {
             columnNames.add("`" + key + "`");
             if (value != null) {
