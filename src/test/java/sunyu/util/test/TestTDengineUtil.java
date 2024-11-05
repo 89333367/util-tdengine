@@ -308,4 +308,23 @@ public class TestTDengineUtil {
     }
 
 
+    @Test
+    void t010() {
+        //数据源
+        HikariConfig config = new HikariConfig();
+        config.setDriverClassName("com.taosdata.jdbc.rs.RestfulDriver");
+        config.setJdbcUrl("jdbc:TAOS-RS://192.168.13.87:16042/?batchfetch=true");
+        config.setUsername("root");
+        config.setPassword("taosdata");
+        DataSource dataSource = new HikariDataSource(config);
+
+        //初始化，应用全局只需要初始化一个即可
+        TDengineUtil tdUtil = TDengineUtil.builder().build(dataSource);
+
+        for (Map<String, Object> m : tdUtil.executeQuery("select count(*) from frequent.v_c", null, null)) {
+            log.info("{}", m);
+        }
+
+        tdUtil.close();
+    }
 }

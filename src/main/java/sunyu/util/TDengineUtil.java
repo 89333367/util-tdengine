@@ -38,7 +38,7 @@ public class TDengineUtil implements Serializable, Closeable {
     private int maxSqlLength = 1024 * 512;
     private int maxPoolSize = 1;
     private int maxWorkQueue = 10;
-    private String insertPre = "INSERT INTO";
+    private final String insertPre = "INSERT INTO";
     private final ReentrantLock lock = new ReentrantLock();
 
     /**
@@ -85,6 +85,17 @@ public class TDengineUtil implements Serializable, Closeable {
      */
     public TDengineUtil maxWorkQueue(int size) {
         this.maxWorkQueue = size;
+        return this;
+    }
+
+    /**
+     * 设置一条sql最大长度
+     *
+     * @param length
+     * @return
+     */
+    public TDengineUtil maxSqlLength(int length) {
+        this.maxSqlLength = length;
         return this;
     }
 
@@ -330,10 +341,7 @@ public class TDengineUtil implements Serializable, Closeable {
      * 等待所有任务执行完毕
      */
     private void waitUntilAllTasksComplete() {
-        while (true) {
-            if (threadPoolExecutor.getActiveCount() == 0 && threadPoolExecutor.getQueue().isEmpty()) {
-                break;
-            }
+        while (threadPoolExecutor.getActiveCount() != 0 || !threadPoolExecutor.getQueue().isEmpty()) {
             ThreadUtil.sleep(100);
         }
     }
@@ -414,13 +422,6 @@ public class TDengineUtil implements Serializable, Closeable {
         } catch (Exception e) {
             log.error("回收资源出现异常 {}", e.getMessage());
         }
-        sqlCache.setLength(0);
-        dataSource = null;
-        threadPoolExecutor = null;
-        maxSqlLength = 1024 * 512;
-        maxPoolSize = 1;
-        maxWorkQueue = 10;
-        insertPre = "INSERT INTO";
         log.info("销毁工具类完毕");
     }
 
