@@ -110,7 +110,7 @@ public class TDengineUtil implements Serializable, Closeable {
      * @param tableName    表名称
      * @param row          一行数据内容
      */
-    public void insertRow(String databaseName, String superTable, String tableName, Map<String, Object> row) {
+    public void insertRow(String databaseName, String superTable, String tableName, Map<String, ?> row) {
         try {
             lock.lock();
             String subSql = getSubSql(databaseName, superTable, tableName, row);
@@ -127,7 +127,7 @@ public class TDengineUtil implements Serializable, Closeable {
         }
     }
 
-    private String getSubSql(String databaseName, String superTable, String tableName, Map<String, Object> row) {
+    private String getSubSql(String databaseName, String superTable, String tableName, Map<String, ?> row) {
         List<String> columnNames = new ArrayList<>();
         List<String> columnValues = new ArrayList<>();
         row.forEach((key, value) -> {
