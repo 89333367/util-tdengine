@@ -2,6 +2,7 @@ package sunyu.util;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.convert.Convert;
+import cn.hutool.core.exceptions.ExceptionUtil;
 import cn.hutool.core.thread.BlockPolicy;
 import cn.hutool.core.thread.ExecutorBuilder;
 import cn.hutool.core.thread.ThreadUtil;
@@ -164,7 +165,7 @@ public class TDengineUtil implements Serializable, Closeable {
                 i = stmt.executeUpdate(sql);
                 break;
             } catch (Exception e) {
-                log.error("执行sql语句出错: {} {}", e.getMessage(), sql);
+                log.error("执行sql语句出错: {} {}", ExceptionUtil.stacktraceToString(e), sql);
                 if (sleepMillis != null) {
                     ThreadUtil.sleep(sleepMillis);
                 } else {
@@ -203,7 +204,7 @@ public class TDengineUtil implements Serializable, Closeable {
             try {
                 return executeQuery(sql);
             } catch (Exception e) {
-                log.error("查询sql语句出错: {} {}", e.getMessage(), sql);
+                log.error("查询sql语句出错: {} {}", ExceptionUtil.stacktraceToString(e), sql);
                 if (sleepMillis != null) {
                     ThreadUtil.sleep(sleepMillis);
                 } else {
@@ -418,9 +419,9 @@ public class TDengineUtil implements Serializable, Closeable {
             threadPoolExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
             log.info("关闭线程池完毕");
         } catch (InterruptedException e) {
-            log.error("回收资源出现中断异常 {}", e.getMessage());
+            log.error("回收资源出现中断异常 {}", ExceptionUtil.stacktraceToString(e));
         } catch (Exception e) {
-            log.error("回收资源出现异常 {}", e.getMessage());
+            log.error("回收资源出现异常 {}", ExceptionUtil.stacktraceToString(e));
         }
         log.info("销毁工具类完毕");
     }
