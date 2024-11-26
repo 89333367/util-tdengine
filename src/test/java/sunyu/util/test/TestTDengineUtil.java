@@ -327,4 +327,25 @@ public class TestTDengineUtil {
 
         tdUtil.close();
     }
+
+
+    @Test
+    void t011() throws Exception {
+        //数据源
+        HikariConfig config = new HikariConfig();
+        config.setDriverClassName("com.taosdata.jdbc.rs.RestfulDriver");
+        config.setJdbcUrl("jdbc:TAOS-RS://192.168.11.198:6041/?batchfetch=true");
+        config.setUsername("root");
+        config.setPassword("taosdata");
+        DataSource dataSource = new HikariDataSource(config);
+
+        //初始化，应用全局只需要初始化一个即可
+        TDengineUtil tdUtil = TDengineUtil.builder().build(dataSource);
+        List<Map<String, Object>> rows = tdUtil.executeQuery("show dnodes");
+        for (Map<String, Object> row : rows) {
+            log.info("{}", row);
+        }
+
+        tdUtil.close();
+    }
 }
