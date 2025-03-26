@@ -3,132 +3,116 @@ package sunyu.util;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.convert.Convert;
 import cn.hutool.core.exceptions.ExceptionUtil;
-import cn.hutool.core.thread.BlockPolicy;
-import cn.hutool.core.thread.ExecutorBuilder;
-import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 
 import javax.sql.DataSource;
-import java.io.Closeable;
-import java.io.Serializable;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * TDengine工具类
  * <p>
- * 主要用于缓冲写入sql，到达批量写入效果，提升写入效率，同时也拥有查询功能
+ * 提供并发写入能力
  *
  * @author 孙宇
  */
-public class TDengineUtil implements Serializable, Closeable {
+public class TDengineUtil implements AutoCloseable {
     private final Log log = LogFactory.get();
+    private final Config config;
 
-    private final StringBuilder sqlCache = new StringBuilder();
-    private DataSource dataSource;
-    private ThreadPoolExecutor threadPoolExecutor;
-    private int maxSqlLength = 1024 * 512;
-    private int maxPoolSize = 1;
-    private int maxWorkQueue = 10;
-    private final String insertPre = "INSERT INTO";
-    private final ReentrantLock lock = new ReentrantLock();
+    public static Builder builder() {
+        return new Builder();
+    }
 
-    /**
-     * ResultSet回调
-     */
-    public interface ResultSetCallback {
+    private TDengineUtil(Config config) {
+        log.info("[构建TDengineUtil] 开始");
+        config.asyncTaskUtil = AsyncTaskUtil.builder().setMaxConcurrency(config.maxConcurrency).build();
+        log.info("[构建TDengineUtil] 结束");
+
+        this.config = config;
+    }
+
+    private static class Config {
+        private DataSource dataSource;
+        private AsyncTaskUtil asyncTaskUtil;
+        private Integer maxConcurrency = 10;
+    }
+
+    public static class Builder {
+        private final Config config = new Config();
+
+        public TDengineUtil build() {
+            return new TDengineUtil(config);
+        }
+
         /**
-         * 执行回调
+         * 设置数据源
          *
-         * @param resultSet 结果集
+         * @param dataSource
+         * @return
          */
-        void exec(ResultSet resultSet) throws Exception;
-    }
+        public Builder dataSource(DataSource dataSource) {
+            config.dataSource = dataSource;
+            return this;
+        }
 
-
-    /**
-     * 设置数据源
-     *
-     * @param ds
-     * @return
-     */
-    public TDengineUtil dataSource(DataSource ds) {
-        this.dataSource = ds;
-        return this;
-    }
-
-    /**
-     * 设置最大线程数
-     *
-     * @param size
-     * @return
-     */
-    public TDengineUtil maxPoolSize(int size) {
-        this.maxPoolSize = size;
-        return this;
-    }
-
-
-    /**
-     * 设置最大阻塞队列数
-     *
-     * @param size
-     * @return
-     */
-    public TDengineUtil maxWorkQueue(int size) {
-        this.maxWorkQueue = size;
-        return this;
-    }
-
-    /**
-     * 设置一条sql最大长度
-     *
-     * @param length
-     * @return
-     */
-    public TDengineUtil maxSqlLength(int length) {
-        this.maxSqlLength = length;
-        return this;
-    }
-
-
-    /**
-     * 写入一行数据
-     * <p>
-     * 会先写入sql缓存，如果sql缓存超出大小，则会放入执行队列，由多线程执行sql
-     *
-     * @param databaseName 数据库名称
-     * @param superTable   超级表名称
-     * @param tableName    表名称
-     * @param row          一行数据内容
-     */
-    public void insertRow(String databaseName, String superTable, String tableName, Map<String, ?> row) {
-        try {
-            lock.lock();
-            String subSql = getSubSql(databaseName, superTable, tableName, row);
-            if (insertPre.length() + sqlCache.length() + subSql.length() > maxSqlLength) {
-                String sql = insertPre + sqlCache.toString();
-                sqlCache.setLength(0);
-                threadPoolExecutor.execute(() -> {
-                    executeUpdate(sql, null, 1000 * 60);
-                });
-            }
-            sqlCache.append(subSql);
-        } finally {
-            lock.unlock();
+        /**
+         * 设置最大并发执行数量
+         *
+         * @param maxConcurrency
+         * @return
+         */
+        public Builder setMaxConcurrency(int maxConcurrency) {
+            config.maxConcurrency = maxConcurrency;
+            return this;
         }
     }
 
-    private String getSubSql(String databaseName, String superTable, String tableName, Map<String, ?> row) {
+    /**
+     * 回收资源
+     */
+    @Override
+    public void close() {
+        log.info("[销毁TDengineUtil] 开始");
+        config.asyncTaskUtil.awaitAllTasks();
+        config.asyncTaskUtil.close();
+        log.info("[销毁TDengineUtil] 结束");
+    }
+
+    /**
+     * 等待所有任务完成
+     */
+    public void awaitAllTasks() {
+        config.asyncTaskUtil.awaitAllTasks();
+    }
+
+    /**
+     * 异步插入一条记录，需要在合适的位置调用awaitAllTasks方法，避免还未写入完毕就结束程序
+     *
+     * @param databaseName 数据库名称
+     * @param superTable   超级表名称
+     * @param tableName    表名
+     * @param row          行数据，包括标签数据
+     */
+    public void asyncInsertRow(String databaseName, String superTable, String tableName, Map<String, ?> row) {
+        config.asyncTaskUtil.submitTask(() -> insertRow(databaseName, superTable, tableName, row), null, 1000 * 10);
+    }
+
+
+    /**
+     * 插入一条记录
+     *
+     * @param databaseName 数据库名称
+     * @param superTable   超级表名称
+     * @param tableName    表名
+     * @param row          行数据，包括标签数据
+     */
+    public void insertRow(String databaseName, String superTable, String tableName, Map<String, ?> row) {
         List<String> columnNames = new ArrayList<>();
         List<String> columnValues = new ArrayList<>();
         row.forEach((key, value) -> {
@@ -139,94 +123,37 @@ public class TDengineUtil implements Serializable, Closeable {
                 columnValues.add(null);
             }
         });
-        //最终拼装后的格式(注意前面要留个空格)：
-        // `databaseName`.`superTableName` (`tbname`,`column1`,`tag1` ,...) values ('表名','列值1','标签值1' ,...)
-        String subSql = StrUtil.format(" `" + databaseName + "`.`" + superTable + "` (`tbname`,{}) values ('" + tableName + "',{})"
+        // INSERT INTO `databaseName`.`superTableName` (`tbname`,`column1`,`tag1` ,...) values ('表名','列值1','标签值1' ,...)
+        String sql = StrUtil.format("INSERT INTO `" + databaseName + "`.`" + superTable + "` (`tbname`,{}) values ('" + tableName + "',{})"
                 , CollUtil.join(columnNames, ",")
                 , CollUtil.join(columnValues, ",")
         );
-        //log.debug(subSql);
-        return subSql;
+        executeUpdate(sql);
     }
 
     /**
-     * 执行sql语句
-     *
-     * @param sql         sql语句
-     * @param retry       重试次数，如果为null则无限重试，0为只执行一次
-     * @param sleepMillis 重试睡眠间隔，单位毫秒，如果为null，则间隔时间为1000*5毫秒
-     * @return 响应数量，如果返回-1，则代表更新异常
-     */
-    public int executeUpdate(String sql, Integer retry, Integer sleepMillis) {
-        //log.debug("Executing SQL: {}", sql);
-        int i = -1;
-        while (retry == null || retry >= 0) {
-            try (Connection conn = dataSource.getConnection(); Statement stmt = conn.createStatement();) {
-                i = stmt.executeUpdate(sql);
-                break;
-            } catch (Exception e) {
-                log.error("执行sql语句出错: {} {}", ExceptionUtil.stacktraceToString(e), sql);
-                if (sleepMillis != null) {
-                    ThreadUtil.sleep(sleepMillis);
-                } else {
-                    ThreadUtil.sleep(1000 * 5);
-                }
-                if (retry != null) {
-                    retry--;
-                }
-            }
-        }
-        return i;
-    }
-
-    /**
-     * 查询sql语句
-     *
-     * @param sql      sql语句
-     * @param callback 回调函数
-     */
-    public void executeQuery(String sql, ResultSetCallback callback) throws Exception {
-        try (Connection conn = dataSource.getConnection(); Statement stmt = conn.createStatement(); ResultSet resultSet = stmt.executeQuery(sql);) {
-            callback.exec(resultSet);
-        }
-    }
-
-    /**
-     * 查询sql语句
-     *
-     * @param sql         sql语句
-     * @param retry       重试次数，如果为null则无限重试，0为只执行一次
-     * @param sleepMillis 重试睡眠间隔，单位毫秒，如果为null，则间隔时间为1000*5毫秒
-     * @return 查询结果
-     */
-    public List<Map<String, Object>> executeQuery(String sql, Integer retry, Integer sleepMillis) {
-        while (retry == null || retry >= 0) {
-            try {
-                return executeQuery(sql);
-            } catch (Exception e) {
-                log.error("查询sql语句出错: {} {}", ExceptionUtil.stacktraceToString(e), sql);
-                if (sleepMillis != null) {
-                    ThreadUtil.sleep(sleepMillis);
-                } else {
-                    ThreadUtil.sleep(1000 * 5);
-                }
-                if (retry != null) {
-                    retry--;
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * 查询sql语句
+     * 执行更新sql语句
      *
      * @param sql sql语句
-     * @return 查询结果
      */
-    public List<Map<String, Object>> executeQuery(String sql) throws Exception {
-        List<Map<String, Object>> rows = new ArrayList<>();
-        executeQuery(sql, resultSet -> {
+    public void executeUpdate(String sql) {
+        try (Connection conn = config.dataSource.getConnection(); Statement stmt = conn.createStatement();) {
+            stmt.executeUpdate(sql);
+        } catch (SQLException e) {
+            log.error("执行sql语句出错: {} {}", ExceptionUtil.stacktraceToString(e), sql);
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * 查询sql语句
+     *
+     * @param sql 查询sql
+     * @return
+     */
+    public List<Map<String, Object>> executeQuery(String sql) {
+        try (Connection conn = config.dataSource.getConnection(); Statement stmt = conn.createStatement(); ResultSet resultSet = stmt.executeQuery(sql);) {
+            List<Map<String, Object>> rows = new ArrayList<>();
             ResultSetMetaData metaData = resultSet.getMetaData();
             int columnCount = metaData.getColumnCount();
             while (resultSet.next()) {
@@ -315,116 +242,11 @@ public class TDengineUtil implements Serializable, Closeable {
                 }
                 rows.add(row);
             }
-        });
-        return rows;
-    }
-
-    /**
-     * 等待sql缓存执行完毕
-     */
-    public void awaitExecution() {
-        try {
-            lock.lock();
-            if (sqlCache.length() > 0) {
-                String sql = insertPre + sqlCache.toString();
-                sqlCache.setLength(0);
-                threadPoolExecutor.execute(() -> {
-                    executeUpdate(sql, null, null);
-                });
-            }
-            waitUntilAllTasksComplete();
-        } finally {
-            lock.unlock();
+            return rows;
+        } catch (SQLException e) {
+            log.error("查询sql语句出错: {} {}", ExceptionUtil.stacktraceToString(e), sql);
+            throw new RuntimeException(e);
         }
     }
-
-    /**
-     * 等待所有任务执行完毕
-     */
-    private void waitUntilAllTasksComplete() {
-        while (threadPoolExecutor.getActiveCount() != 0 || !threadPoolExecutor.getQueue().isEmpty()) {
-            ThreadUtil.sleep(100);
-        }
-    }
-
-
-    /**
-     * 私有构造，避免外部初始化
-     */
-    private TDengineUtil() {
-    }
-
-    /**
-     * 获得工具类工厂
-     *
-     * @return
-     */
-    public static TDengineUtil builder() {
-        return new TDengineUtil();
-    }
-
-
-    public TDengineUtil build(DataSource dataSource) {
-        log.info("构建工具类开始");
-
-        if (threadPoolExecutor != null) {
-            log.warn("工具类已构建，请不要重复构建");
-            return this;
-        }
-
-        if (dataSource == null) {
-            throw new RuntimeException("数据源参数异常，未正确传递数据源参数");
-        }
-        log.info("设置数据源开始");
-        this.dataSource = dataSource;
-        log.info("设置数据源结束");
-        log.info("创建线程池开始");
-        threadPoolExecutor = ExecutorBuilder.create()
-                .setCorePoolSize(0)
-                .setMaxPoolSize(maxPoolSize)
-                .setWorkQueue(new LinkedBlockingQueue<>(maxWorkQueue))
-                .setHandler(new BlockPolicy(runnable -> {
-                    log.error("向线程的阻塞队列put数据出现了异常");
-                }))
-                .build();
-        log.info("创建线程池完毕");
-        log.info("数据源 {} {}", this.dataSource.getClass().getName(), this.dataSource.hashCode());
-        log.info("最大线程数量 {}", maxPoolSize);
-        log.info("线程最大工作队列 {}", maxWorkQueue);
-        log.info("构建工具类完毕");
-        return this;
-    }
-
-    /**
-     * 构建工具类
-     *
-     * @return
-     */
-    public TDengineUtil build() {
-        return build(dataSource);
-    }
-
-    /**
-     * 回收资源，等待sql缓存和所有线程队列执行完毕
-     */
-    @Override
-    public void close() {
-        log.info("销毁工具类开始");
-        log.info("等待sql缓存执行开始");
-        awaitExecution();
-        log.info("等待sql缓存执行完毕");
-        log.info("关闭线程池开始");
-        threadPoolExecutor.shutdown();
-        try {
-            threadPoolExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-            log.info("关闭线程池完毕");
-        } catch (InterruptedException e) {
-            log.error("回收资源出现中断异常 {}", ExceptionUtil.stacktraceToString(e));
-        } catch (Exception e) {
-            log.error("回收资源出现异常 {}", ExceptionUtil.stacktraceToString(e));
-        }
-        log.info("销毁工具类完毕");
-    }
-
 
 }

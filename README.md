@@ -1,33 +1,5 @@
 # TDengine工具类
 
-## 描述
-
-在大数据环境中，TDengine的写入非常缓慢，
-不是因为TDengine接收不了或性能不行，是因为写入的方式决定了写入的速度，
-即使是使用了 Statement 的 addBatch() 和 executeBatch() 来批量执行，
-也没有带来性能上的提升，
-原因是 TDengine 的 JDBC 实现中，通过 addBatch 方法提交的 SQL 语句，
-会按照添加的顺序，依次执行，这种方式没有减少与服务端的交互次数，不会带来性能上的提升，
-所以本工具类就产生了，使用本工具类来减少服务器交互的次数，提升写入性能；
-
-## 实现功能
-
-1. 数据写入
-    - 单条写入
-    - 批量写入
-2. 数据查询
-    - ResultSet回调查询
-    - List<Map<String,Object>>结果查询
-
-## 特色
-
-1. 工具类使用枚举类型编写，全局唯一，整个APP只需要初始化一次，避免过多实例浪费资源
-2. 写入接口调用简单，只需调用insertRow即可，sql缓存、拼装与执行由工具类帮助完成
-3. 数据写入使用了缓存，会自动将多条sql拼装成一条sql，利用多线程、多队列功能批量写入，实现快速写入
-4. 数据写入一定成功，内部拥有重试机制，不会丢失写入数据
-5. 数据查询开放回调接口，可以自定义处理结果集
-6. 数据查询可返回List集合，操作简单
-
 ## 环境
 
 * jdk8 x64 及以上版本
@@ -40,9 +12,10 @@
 ```xml
 <!-- 工具类依赖，已经包含taos-jdbcdriver依赖，切记不要再引入taos-jdbcdriver依赖避免重复 -->
 <dependency>
-    <groupId>sunyu.util</groupId>
-    <artifactId>util-tdengine</artifactId>
-    <version>3.4.0_v1.0</version>
+   <groupId>sunyu.util</groupId>
+   <artifactId>util-tdengine</artifactId>
+   <!-- {taos-jdbcdriver.version}_{util.version}_{jdk.version}_{architecture.version} -->
+   <version>3.5.3_1.0_jdk8_x64</version>
 </dependency>
 ```
 
@@ -89,122 +62,108 @@ spring.datasource.dynamic.hikari.min-idle=0
 spring.datasource.dynamic.hikari.maximum-pool-size=10
 ```
 
-> 如果配置 messageWaitTimeout 属性，那么不要配置时间太长，因为数据写入出现异常，会等待大于 messageWaitTimeout
-> 的时间后重试，这里建议默认不配置即可
+> 如果配置 messageWaitTimeout 属性，那么不要配置时间太长，因为数据写入出现异常，会等待大于 messageWaitTimeout 的时间后重试，这里建议默认不配置即可
 
-## API
-
-```java
-// 用于普通插入查询
-// 更新类语句
-public int executeUpdate(String sql, Integer retry, Integer sleepMillis)
-
-// 查询统计类语句
-public void executeQuery(String sql, ResultSetCallback callback)
-
-public List<Map<String, Object>> executeQuery(String sql)
-
-// 用于并发写入
-// 写入数据
-public void insertRow(String databaseName, String superTable, String tableName, TreeMap<String, Object> row)
-
-// 可以一次写入一个多行数据
-public void insertRow(String databaseName, String superTable, String tableName, Map<String, Object> row)
-
-// 等待缓存写入
-public void awaitExecution()
-
-// 回收工具类资源，回收后工具类不可再使用
-public void close()
-```
 
 ## 示例
 
-### 批量写入Demo
-
 ```java
+import cn.hutool.log.Log;
+import cn.hutool.log.LogFactory;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+import org.junit.jupiter.api.Test;
+import sunyu.util.TDengineUtil;
 
-@Test
-void t001() {
-    //数据源
-    HikariConfig config = new HikariConfig();
-    config.setDriverClassName("com.taosdata.jdbc.rs.RestfulDriver");
-    config.setJdbcUrl("jdbc:TAOS-RS://192.168.13.87:16042/?batchfetch=true");
-    config.setUsername("root");
-    config.setPassword("taosdata");
-    DataSource dataSource = new HikariDataSource(config);
+import javax.sql.DataSource;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-    //初始化，应用全局只需要初始化一个即可
-    TDengineUtil tdUtil = TDengineUtil.builder().dataSource(dataSource).maxPoolSize(5).build();
+public class TestTDengineUtil {
+   Log log = LogFactory.get();
 
-    //多线程，模拟N张表并发写入
-    Date d = DateUtil.parse("2023-01-01");
-    IntStream.rangeClosed(1, 50).parallel().forEach(i -> {
-        for (int j = 1; j <= 1000000; j++) {//每个表N行记录
-            //写入一条记录
-            int finalJ = j;
-            tdUtil.insertRow("testdb2", "t", "t_" + i, new TreeMap<String, Object>() {{
-                //这里可以直接写列和TAG
-                put("c1", DateUtil.offsetSecond(d, finalJ).toString("yyyy-MM-dd HH:mm:ss"));
-                put("c2", null);
-                put("t1", DateUtil.offsetSecond(d, finalJ).toString("yyyy-MM-dd HH:mm:ss"));
-            }});
-        }
-        tdUtil.awaitExecution();//等待一批缓存写入完毕
-    });
-    tdUtil.close();//资源回收
+   public DataSource getDataSource() {
+      //数据源
+      HikariConfig config = new HikariConfig();
+      config.setDriverClassName("com.taosdata.jdbc.rs.RestfulDriver");
+      config.setJdbcUrl("jdbc:TAOS-RS://192.168.13.87:16042/?batchfetch=true");
+      config.setUsername("root");
+      config.setPassword("taosdata");
+      return new HikariDataSource(config);
+   }
+
+
+   @Test
+   void createDatabase() {
+      String sql = "CREATE DATABASE IF NOT EXISTS `db_test`";
+      TDengineUtil tdengineUtil = TDengineUtil.builder().dataSource(getDataSource()).build();
+      tdengineUtil.executeUpdate(sql);
+      tdengineUtil.close();
+   }
+
+   @Test
+   void createSTable() {
+      String sql = "CREATE STABLE IF NOT EXISTS `db_test`.`stb_test` (c1 TIMESTAMP,c2 VARCHAR(100),c3 INT,c4 FLOAT) TAGS (t1 VARCHAR(50))";
+      TDengineUtil tdengineUtil = TDengineUtil.builder().dataSource(getDataSource()).build();
+      tdengineUtil.executeUpdate(sql);
+      tdengineUtil.close();
+   }
+
+   @Test
+   void insertRows() {
+      TDengineUtil tdengineUtil = TDengineUtil.builder().dataSource(getDataSource()).build();
+
+      for (int i = 0; i < 10; i++) {
+         Map<String, Object> row = new HashMap<>();
+         row.put("c1", "2025-03-25 13:18:00");
+         row.put("c2", "value" + i);
+         row.put("c3", i);
+         row.put("c4", i * 1.0);
+         row.put("t1", "tag" + i);
+         tdengineUtil.insertRow("db_test", "stb_test", "tb_test" + i, row);
+      }
+
+      tdengineUtil.close();
+   }
+
+   @Test
+   void asyncInsertRows() {
+      TDengineUtil tdengineUtil = TDengineUtil.builder().dataSource(getDataSource())
+              //设置并发数，默认10
+              .setMaxConcurrency(10)
+              .build();
+
+      for (int i = 0; i < 10; i++) {
+         Map<String, Object> row = new HashMap<>();
+         row.put("c1", "2025-03-26 13:18:00");
+         row.put("c2", "value" + i);
+         row.put("c3", i);
+         row.put("c4", i * 1.0);
+         row.put("t1", "tag" + i);
+         tdengineUtil.asyncInsertRow("db_test", "stb_test", "tb_test" + i, row);//异步插入
+      }
+      tdengineUtil.awaitAllTasks();//等待所有任务完成
+
+      tdengineUtil.close();
+   }
+
+   @Test
+   void query() {
+      //String sql = "SHOW DATABASES";
+      //String sql = "SHOW CREATE DATABASE db_test";
+      //String sql = "SHOW CREATE STABLE db_test.stb_test";
+      //String sql = "DESC db_test.stb_test";
+      String sql = "select * from db_test.stb_test limit 5";
+      TDengineUtil tdengineUtil = TDengineUtil.builder().dataSource(getDataSource()).build();
+      List<Map<String, Object>> rows = tdengineUtil.executeQuery(sql);
+      log.info("查询结果: {}", rows);
+      tdengineUtil.close();
+   }
+
+
 }
-```
 
-### 执行sql Demo
-
-```java
-tdUtil.executeUpdate("sql语句");
-
-//这里可以传递重试次数和重试间隔时间
-tdUtil.executeUpdate("sql语句",2,1000);
-```
-
-### 查询sql Demo
-
-```java
-
-@Test
-void t002() {
-    //数据源
-    HikariConfig config = new HikariConfig();
-    config.setDriverClassName("com.taosdata.jdbc.rs.RestfulDriver");
-    config.setJdbcUrl("jdbc:TAOS-RS://192.168.13.87:16042/?batchfetch=true");
-    config.setUsername("root");
-    config.setPassword("taosdata");
-    DataSource dataSource = new HikariDataSource(config);
-
-    //初始化，应用全局只需要初始化一个即可
-    TDengineUtil tdUtil = TDengineUtil.builder().dataSource(dataSource).maxPoolSize(5).build();
-
-    //查询可以自己使用resultSet回调，自己处理更灵活
-    tdUtil.executeQuery("select * from testdb2.t limit 10", resultSet -> {
-        while (resultSet.next()) {
-            log.info("{}", resultSet.getTimestamp("c1"));
-            log.info("{}", resultSet.getInt("c2"));
-        }
-    });
-
-    //也可以使用封装好的查询方式返回列表，更简单
-    List<Map<String, Object>> rows = tdUtil.executeQuery("select * from testdb2.t limit 10");
-    for (Map<String, Object> row : rows) {
-        log.info("{}", row);
-    }
-
-    //查询统计信息
-    Map<String, Object> m = tdUtil.executeQuery("select count(*) total from testdb2.t").get(0);
-    log.info("{}", m.get("total"));
-
-    //查询其他信息
-    for (Map<String, Object> r : tdUtil.executeQuery("desc testdb2.t")) {
-        log.info("{}", r);
-    }
-}
 ```
 
 ### 解决科学计数法
