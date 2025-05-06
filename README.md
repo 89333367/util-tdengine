@@ -15,7 +15,7 @@
    <groupId>sunyu.util</groupId>
    <artifactId>util-tdengine</artifactId>
    <!-- {taos-jdbcdriver.version}_{util.version}_{jdk.version}_{architecture.version} -->
-   <version>3.6.0_1.0_jdk8_x64</version>
+   <version>3.6.2_1.0_jdk8_x64</version>
 </dependency>
 ```
 
@@ -26,7 +26,7 @@
 <dependency>
     <groupId>com.zaxxer</groupId>
     <artifactId>HikariCP</artifactId>
-    <version>5.1.0</version>
+    <version>6.3.0</version>
 </dependency>
 ```
 
@@ -83,15 +83,17 @@ import java.util.Map;
 public class TestTDengineUtil {
    Log log = LogFactory.get();
 
-   public DataSource getDataSource() {
-      //数据源
-      HikariConfig config = new HikariConfig();
-      config.setDriverClassName("com.taosdata.jdbc.rs.RestfulDriver");
-      config.setJdbcUrl("jdbc:TAOS-RS://192.168.13.87:16042/?batchfetch=true");
-      config.setUsername("root");
-      config.setPassword("taosdata");
-      return new HikariDataSource(config);
-   }
+    public DataSource getDataSource() {
+        //数据源
+        HikariConfig config = new HikariConfig();
+        //config.setDriverClassName("com.taosdata.jdbc.rs.RestfulDriver");
+        //config.setJdbcUrl("jdbc:TAOS-RS://192.168.13.87:16042/?httpConnectTimeout=60000&messageWaitTimeout=60000&httpPoolSize=20");
+        config.setDriverClassName("com.taosdata.jdbc.ws.WebSocketDriver");
+        config.setJdbcUrl("jdbc:TAOS-WS://192.168.13.87:16042/?httpConnectTimeout=60000&messageWaitTimeout=60000");
+        config.setUsername("root");
+        config.setPassword("taosdata");
+        return new HikariDataSource(config);
+    }
 
 
    @Test

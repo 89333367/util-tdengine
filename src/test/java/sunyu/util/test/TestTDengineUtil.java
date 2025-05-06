@@ -18,8 +18,10 @@ public class TestTDengineUtil {
     public DataSource getDataSource() {
         //数据源
         HikariConfig config = new HikariConfig();
-        config.setDriverClassName("com.taosdata.jdbc.rs.RestfulDriver");
-        config.setJdbcUrl("jdbc:TAOS-RS://192.168.13.87:16042/?batchfetch=true");
+        //config.setDriverClassName("com.taosdata.jdbc.rs.RestfulDriver");
+        //config.setJdbcUrl("jdbc:TAOS-RS://192.168.13.87:16042/?httpConnectTimeout=60000&messageWaitTimeout=60000&httpPoolSize=20");
+        config.setDriverClassName("com.taosdata.jdbc.ws.WebSocketDriver");
+        config.setJdbcUrl("jdbc:TAOS-WS://192.168.13.87:16042/?httpConnectTimeout=60000&messageWaitTimeout=60000");
         config.setUsername("root");
         config.setPassword("taosdata");
         return new HikariDataSource(config);

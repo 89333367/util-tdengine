@@ -7,7 +7,7 @@
     <groupId>sunyu.util</groupId>
     <artifactId>util-tdengine</artifactId>
     <!-- {taos-jdbcdriver.version}_{util.version}_{jdk.version}_{architecture.version} -->
-    <version>3.6.0_1.0_jdk8_x64</version>
+    <version>3.6.2_1.0_jdk8_x64</version>
 
     <properties>
         <java.version>1.8</java.version>
@@ -35,13 +35,13 @@
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
-            <version>5.8.36</version>
+            <version>5.8.37</version>
         </dependency>
         <!-- https://central.sonatype.com/artifact/com.taosdata.jdbc/taos-jdbcdriver/versions -->
         <dependency>
             <groupId>com.taosdata.jdbc</groupId>
             <artifactId>taos-jdbcdriver</artifactId>
-            <version>3.6.0</version>
+            <version>3.6.2</version>
         </dependency>
         <dependency>
             <groupId>sunyu.util</groupId>
@@ -60,7 +60,7 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>5.12.1</version>
+            <version>5.12.2</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -128,7 +128,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.5.2</version>
+                <version>3.5.3</version>
                 <configuration>
                     <skip>true</skip>
                 </configuration>
