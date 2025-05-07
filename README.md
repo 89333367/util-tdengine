@@ -3,7 +3,7 @@
 ## 环境
 
 * jdk8 x64 及以上版本
-* TDengine 3.3.2.2 及以上版本
+* TDengine 请根据数据库版本切换驱动版本
 
 ## 必要配置
 
@@ -14,8 +14,17 @@
 <dependency>
    <groupId>sunyu.util</groupId>
    <artifactId>util-tdengine</artifactId>
-   <!-- {taos-jdbcdriver.version}_{util.version}_{jdk.version}_{architecture.version} -->
-   <version>3.6.2_1.0_jdk8_x64</version>
+   <!-- {util.version}_{jdk.version}_{architecture.version} -->
+   <version>1.0_jdk8_x64</version>
+</dependency>
+
+<!-- https://central.sonatype.com/artifact/com.taosdata.jdbc/taos-jdbcdriver/versions -->
+<dependency>
+    <groupId>com.taosdata.jdbc</groupId>
+    <artifactId>taos-jdbcdriver</artifactId>
+    <!-- 数据库版本和驱动对应关系 -->
+    <!-- https://docs.taosdata.com/reference/connector/java/ -->
+    <version>3.4.0</version>
 </dependency>
 ```
 
@@ -43,8 +52,10 @@
 
 ```properties
 # 数据源配置
-spring.datasource.driver-class-name=com.taosdata.jdbc.rs.RestfulDriver
-spring.datasource.url=jdbc:TAOS-RS://192.168.13.87:16042/?batchfetch=true
+spring.datasource.driver-class-name=com.taosdata.jdbc.ws.WebSocketDriver
+spring.datasource.url=jdbc:TAOS-WS://192.168.13.87:16042/?httpConnectTimeout=60000&messageWaitTimeout=60000
+#spring.datasource.driver-class-name=com.taosdata.jdbc.rs.RestfulDriver
+#spring.datasource.url=jdbc:TAOS-RS://192.168.13.87:16042/?batchfetch=true&httpConnectTimeout=60000&messageWaitTimeout=60000&httpPoolSize=20
 spring.datasource.username=root
 spring.datasource.password=taosdata
 spring.datasource.hikari.minimum-idle=0
@@ -54,15 +65,17 @@ spring.datasource.hikari.maximum-pool-size=10
 ```properties
 # 动态数据源配置
 spring.datasource.dynamic.primary=tdengine
-spring.datasource.dynamic.datasource.tdengine.driver-class-name=com.taosdata.jdbc.rs.RestfulDriver
-spring.datasource.dynamic.datasource.tdengine.url=jdbc:TAOS-RS://192.168.13.87:16042/?batchfetch=true
+spring.datasource.dynamic.datasource.tdengine.driver-class-name=com.taosdata.jdbc.ws.WebSocketDriver
+spring.datasource.dynamic.datasource.tdengine.url=jdbc:TAOS-WS://192.168.13.87:16042/?httpConnectTimeout=60000&messageWaitTimeout=60000
+#spring.datasource.dynamic.datasource.tdengine.driver-class-name=com.taosdata.jdbc.rs.RestfulDriver
+#spring.datasource.dynamic.datasource.tdengine.url=jdbc:TAOS-RS://192.168.13.87:16042/?batchfetch=true&httpConnectTimeout=60000&messageWaitTimeout=60000&httpPoolSize=20
 spring.datasource.dynamic.datasource.tdengine.username=root
 spring.datasource.dynamic.datasource.tdengine.password=taosdata
 spring.datasource.dynamic.hikari.min-idle=0
 spring.datasource.dynamic.hikari.maximum-pool-size=10
 ```
 
-> 如果配置 messageWaitTimeout 属性，那么不要配置时间太长，因为数据写入出现异常，会等待大于 messageWaitTimeout 的时间后重试，这里建议默认不配置即可
+> 如果配置 messageWaitTimeout 属性，那么不要配置时间太长，因为数据写入出现异常，会等待大于 messageWaitTimeout 的时间后重试，这里建议默认值即可
 
 
 ## 示例
@@ -87,7 +100,7 @@ public class TestTDengineUtil {
         //数据源
         HikariConfig config = new HikariConfig();
         //config.setDriverClassName("com.taosdata.jdbc.rs.RestfulDriver");
-        //config.setJdbcUrl("jdbc:TAOS-RS://192.168.13.87:16042/?httpConnectTimeout=60000&messageWaitTimeout=60000&httpPoolSize=20");
+        //config.setJdbcUrl("jdbc:TAOS-RS://192.168.13.87:16042/?batchfetch=true&httpConnectTimeout=60000&messageWaitTimeout=60000&httpPoolSize=20");
         config.setDriverClassName("com.taosdata.jdbc.ws.WebSocketDriver");
         config.setJdbcUrl("jdbc:TAOS-WS://192.168.13.87:16042/?httpConnectTimeout=60000&messageWaitTimeout=60000");
         config.setUsername("root");

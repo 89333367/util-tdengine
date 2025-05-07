@@ -215,6 +215,9 @@ public class TDengineUtil implements AutoCloseable {
                         case Types.CLOB:
                             row.put(columnName, resultSet.getClob(columnIndex));
                             break;
+                        case Types.NCLOB:
+                            row.put(columnName, resultSet.getNClob(columnIndex));
+                            break;
                         case Types.ARRAY:
                             row.put(columnName, resultSet.getArray(columnIndex));
                             break;
@@ -235,6 +238,9 @@ public class TDengineUtil implements AutoCloseable {
                             break;
                         case Types.JAVA_OBJECT:
                         case Types.STRUCT:
+                        case Types.REF_CURSOR:
+                        case Types.TIME_WITH_TIMEZONE:
+                        case Types.TIMESTAMP_WITH_TIMEZONE:
                         default:
                             row.put(columnName, resultSet.getObject(columnIndex));
                             break;
