@@ -10,7 +10,7 @@
 ### pom.xml(选择匹配jdk版本的依赖)
 
 ```xml
-<!-- 工具类依赖，已经包含taos-jdbcdriver依赖，切记不要再引入taos-jdbcdriver依赖避免重复 -->
+<!-- 工具类依赖，已经未含taos-jdbcdriver依赖，需要自己引入合适版本的驱动 -->
 <dependency>
    <groupId>sunyu.util</groupId>
    <artifactId>util-tdengine</artifactId>
