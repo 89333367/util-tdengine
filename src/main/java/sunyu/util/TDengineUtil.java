@@ -93,26 +93,41 @@ public class TDengineUtil implements AutoCloseable {
 
     /**
      * 异步插入一条记录，需要在合适的位置调用awaitAllTasks方法，避免还未写入完毕就结束程序
+     * （TDengine3.3版本开始使用这种写法）
      *
-     * @param databaseName 数据库名称
-     * @param superTable   超级表名称
-     * @param tableName    表名
-     * @param row          行数据，包括标签数据
+     * @param databaseName   数据库名称
+     * @param superTableName 超级表名称
+     * @param tableName      表名
+     * @param row            行数据，包括标签数据
      */
-    public void asyncInsertRow(String databaseName, String superTable, String tableName, Map<String, ?> row) {
-        config.asyncTaskUtil.submitTask(() -> insertRow(databaseName, superTable, tableName, row), null, 1000 * 10);
+    public void asyncInsertRow(String databaseName, String superTableName, String tableName, Map<String, ?> row) {
+        config.asyncTaskUtil.submitTask(() -> insertRow(databaseName, superTableName, tableName, row), null, 1000 * 10);
+    }
+
+    /**
+     * 异步插入一条记录，需要在合适的位置调用awaitAllTasks方法，避免还未写入完毕就结束程序
+     * （TDengine3.3版本以前使用这种写法）
+     *
+     * @param databaseName   数据库名称
+     * @param superTableName 超级表名称
+     * @param tableName      表名
+     * @param rowValue       列
+     * @param rowTag         标签
+     */
+    public void asyncInsertRow(String databaseName, String superTableName, String tableName, Map<String, ?> rowValue, Map<String, ?> rowTag) {
+        config.asyncTaskUtil.submitTask(() -> insertRow(databaseName, superTableName, tableName, rowValue, rowTag), null, 1000 * 10);
     }
 
 
     /**
-     * 插入一条记录
+     * 插入一条记录 （TDengine3.3版本开始使用这种写法）
      *
-     * @param databaseName 数据库名称
-     * @param superTable   超级表名称
-     * @param tableName    表名
-     * @param row          行数据，包括标签数据
+     * @param databaseName   数据库名称
+     * @param superTableName 超级表名称
+     * @param tableName      表名
+     * @param row            行数据，包括标签数据
      */
-    public void insertRow(String databaseName, String superTable, String tableName, Map<String, ?> row) {
+    public void insertRow(String databaseName, String superTableName, String tableName, Map<String, ?> row) {
         List<String> columnNames = new ArrayList<>();
         List<String> columnValues = new ArrayList<>();
         row.forEach((key, value) -> {
@@ -123,8 +138,52 @@ public class TDengineUtil implements AutoCloseable {
                 columnValues.add(null);
             }
         });
-        // INSERT INTO `databaseName`.`superTableName` (`tbname`,`column1`,`tag1` ,...) values ('表名','列值1','标签值1' ,...)
-        String sql = StrUtil.format("INSERT INTO `" + databaseName + "`.`" + superTable + "` (`tbname`,{}) values ('" + tableName + "',{})"
+        // INSERT INTO `databaseName`.`superTableName` (`tbname`,`columnName1`,`tagName1` ,...) values ('表名','columnValue1','tagValue1' ,...)
+        String sql = StrUtil.format("INSERT INTO `" + databaseName + "`.`" + superTableName + "` (`tbname`,{}) values ('" + tableName + "',{})"
+                , CollUtil.join(columnNames, ",")
+                , CollUtil.join(columnValues, ",")
+        );
+        executeUpdate(sql);
+    }
+
+    /**
+     * 插入一条记录 （TDengine3.3版本以前使用这种写法）
+     *
+     * @param databaseName   数据库名称
+     * @param superTableName 超级表名称
+     * @param tableName      表名
+     * @param rowValue       列
+     * @param rowTag         标签
+     */
+    public void insertRow(String databaseName, String superTableName, String tableName, Map<String, ?> rowValue, Map<String, ?> rowTag) {
+        List<String> columnNames = new ArrayList<>();
+        List<String> columnValues = new ArrayList<>();
+        rowValue.forEach((key, value) -> {
+            columnNames.add("`" + key + "`");
+            if (value != null) {
+                columnValues.add("'" + Convert.toStr(value) + "'");
+            } else {
+                columnValues.add(null);
+            }
+        });
+        List<String> tagNames = new ArrayList<>();
+        List<String> tagValues = new ArrayList<>();
+        rowTag.forEach((key, value) -> {
+            tagNames.add("`" + key + "`");
+            if (value != null) {
+                tagValues.add("'" + Convert.toStr(value) + "'");
+            } else {
+                tagValues.add(null);
+            }
+        });
+        // INSERT INTO `databaseName`.`tableName` USING `databaseName`.`superTableName` (`tagName1`,...) TAGS ('tagValue1',...) (`fieldName1`,...) VALUES ('value1',...)
+        String sql = StrUtil.format("INSERT INTO `{}`.`{}` USING `{}`.`{}` ({}) TAGS ({}) ({}) VALUES ({})"
+                , databaseName
+                , tableName
+                , databaseName
+                , superTableName
+                , CollUtil.join(tagNames, ",")
+                , CollUtil.join(tagValues, ",")
                 , CollUtil.join(columnNames, ",")
                 , CollUtil.join(columnValues, ",")
         );

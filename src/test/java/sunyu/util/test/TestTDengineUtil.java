@@ -62,6 +62,24 @@ public class TestTDengineUtil {
     }
 
     @Test
+    void insertRows2() {
+        TDengineUtil tdengineUtil = TDengineUtil.builder().dataSource(getDataSource()).build();
+
+        for (int i = 0; i < 10; i++) {
+            Map<String, Object> rowValue = new HashMap<>();
+            rowValue.put("c1", "2025-03-25 13:18:00");
+            rowValue.put("c2", "value" + i);
+            rowValue.put("c3", i);
+            rowValue.put("c4", i * 1.0);
+            Map<String, Object> tagValue = new HashMap<>();
+            tagValue.put("t1", "tag" + i);
+            tdengineUtil.insertRow("db_test", "stb_test", "tb_test" + i, rowValue, tagValue);
+        }
+
+        tdengineUtil.close();
+    }
+
+    @Test
     void asyncInsertRows() {
         TDengineUtil tdengineUtil = TDengineUtil.builder().dataSource(getDataSource())
                 //设置并发数，默认10
@@ -76,6 +94,28 @@ public class TestTDengineUtil {
             row.put("c4", i * 1.0);
             row.put("t1", "tag" + i);
             tdengineUtil.asyncInsertRow("db_test", "stb_test", "tb_test" + i, row);//异步插入
+        }
+        tdengineUtil.awaitAllTasks();//等待所有任务完成
+
+        tdengineUtil.close();
+    }
+
+    @Test
+    void asyncInsertRows2() {
+        TDengineUtil tdengineUtil = TDengineUtil.builder().dataSource(getDataSource())
+                //设置并发数，默认10
+                .setMaxConcurrency(10)
+                .build();
+
+        for (int i = 0; i < 10; i++) {
+            Map<String, Object> rowValue = new HashMap<>();
+            rowValue.put("c1", "2025-03-25 13:18:00");
+            rowValue.put("c2", "value" + i);
+            rowValue.put("c3", i);
+            rowValue.put("c4", i * 1.0);
+            Map<String, Object> tagValue = new HashMap<>();
+            tagValue.put("t1", "tag" + i);
+            tdengineUtil.asyncInsertRow("db_test", "stb_test", "tb_test" + i, rowValue, tagValue);//异步插入
         }
         tdengineUtil.awaitAllTasks();//等待所有任务完成
 
