@@ -101,7 +101,11 @@ public class TDengineUtil implements AutoCloseable {
      * @param row            行数据，包括标签数据
      */
     public void asyncInsertRow(String databaseName, String superTableName, String tableName, Map<String, ?> row) {
-        config.asyncTaskUtil.submitTask(() -> insertRow(databaseName, superTableName, tableName, row), null, 1000 * 10);
+        config.asyncTaskUtil.submitTask(() -> insertRow(databaseName, superTableName, tableName, row), throwable -> {
+            if (throwable != null) {
+                log.error(throwable.getMessage());
+            }
+        }, null);
     }
 
     /**
@@ -115,7 +119,11 @@ public class TDengineUtil implements AutoCloseable {
      * @param rowTag         标签
      */
     public void asyncInsertRow(String databaseName, String superTableName, String tableName, Map<String, ?> rowValue, Map<String, ?> rowTag) {
-        config.asyncTaskUtil.submitTask(() -> insertRow(databaseName, superTableName, tableName, rowValue, rowTag), null, 1000 * 10);
+        config.asyncTaskUtil.submitTask(() -> insertRow(databaseName, superTableName, tableName, rowValue, rowTag), throwable -> {
+            if (throwable != null) {
+                log.error(throwable.getMessage());
+            }
+        }, null);
     }
 
 
@@ -198,7 +206,7 @@ public class TDengineUtil implements AutoCloseable {
     public void executeUpdate(String sql) {
         try (Connection conn = config.dataSource.getConnection(); Statement stmt = conn.createStatement();) {
             stmt.executeUpdate(sql);
-        } catch (SQLException e) {
+        } catch (Exception e) {
             log.error("执行sql语句出错: {} {}", ExceptionUtil.stacktraceToString(e), sql);
             throw new RuntimeException(e);
         }
@@ -308,7 +316,7 @@ public class TDengineUtil implements AutoCloseable {
                 rows.add(row);
             }
             return rows;
-        } catch (SQLException e) {
+        } catch (Exception e) {
             log.error("查询sql语句出错: {} {}", ExceptionUtil.stacktraceToString(e), sql);
             throw new RuntimeException(e);
         }
