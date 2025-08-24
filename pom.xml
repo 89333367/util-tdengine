@@ -44,7 +44,6 @@
             <!-- 数据库版本和驱动对应关系 -->
             <!-- https://docs.taosdata.com/reference/connector/java/ -->
             <version>3.4.0</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>sunyu.util</groupId>
