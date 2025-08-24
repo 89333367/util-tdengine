@@ -16,15 +16,7 @@
    <artifactId>util-tdengine</artifactId>
    <!-- {util.version}_{jdk.version}_{architecture.version} -->
    <version>1.0_jdk8_x64</version>
-</dependency>
-
-<!-- https://central.sonatype.com/artifact/com.taosdata.jdbc/taos-jdbcdriver/versions -->
-<dependency>
-    <groupId>com.taosdata.jdbc</groupId>
-    <artifactId>taos-jdbcdriver</artifactId>
-    <!-- 数据库版本和驱动对应关系 -->
-    <!-- https://docs.taosdata.com/reference/connector/java/ -->
-    <version>3.4.0</version>
+   <classifier>shaded</classifier>
 </dependency>
 ```
 
