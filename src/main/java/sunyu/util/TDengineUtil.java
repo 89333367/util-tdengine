@@ -30,9 +30,9 @@ public class TDengineUtil implements AutoCloseable {
     }
 
     private TDengineUtil(Config config) {
-        log.info("[构建TDengineUtil] 开始");
+        log.info("[构建 {}] 开始", this.getClass().getSimpleName());
         config.asyncTaskUtil = AsyncTaskUtil.builder().setMaxConcurrency(config.maxConcurrency).build();
-        log.info("[构建TDengineUtil] 结束");
+        log.info("[构建 {}] 结束", this.getClass().getSimpleName());
 
         this.config = config;
     }
@@ -54,6 +54,7 @@ public class TDengineUtil implements AutoCloseable {
          * 设置数据源
          *
          * @param dataSource
+         *
          * @return
          */
         public Builder dataSource(DataSource dataSource) {
@@ -65,6 +66,7 @@ public class TDengineUtil implements AutoCloseable {
          * 设置最大并发执行数量
          *
          * @param maxConcurrency
+         *
          * @return
          */
         public Builder setMaxConcurrency(int maxConcurrency) {
@@ -78,10 +80,9 @@ public class TDengineUtil implements AutoCloseable {
      */
     @Override
     public void close() {
-        log.info("[销毁TDengineUtil] 开始");
-        config.asyncTaskUtil.awaitAllTasks();
+        log.info("[销毁 {}] 开始", this.getClass().getSimpleName());
         config.asyncTaskUtil.close();
-        log.info("[销毁TDengineUtil] 结束");
+        log.info("[销毁 {}] 结束", this.getClass().getSimpleName());
     }
 
     /**
@@ -98,10 +99,10 @@ public class TDengineUtil implements AutoCloseable {
      * @param databaseName   数据库名称
      * @param superTableName 超级表名称
      * @param tableName      表名
-     * @param row            行数据，包括标签数据
+     * @param fieldsAndTags  行数据，包括列和标签数据(key：列名或者标签名，value：列值或者标签值)
      */
-    public void asyncInsertRow(String databaseName, String superTableName, String tableName, Map<String, ?> row) {
-        config.asyncTaskUtil.submitTask(() -> insertRow(databaseName, superTableName, tableName, row), throwable -> {
+    public void asyncInsertRow(String databaseName, String superTableName, String tableName, Map<String, ?> fieldsAndTags) {
+        config.asyncTaskUtil.submitTask(() -> insertRow(databaseName, superTableName, tableName, fieldsAndTags), throwable -> {
             if (throwable != null) {
                 log.error(throwable.getMessage());
             }
@@ -115,11 +116,11 @@ public class TDengineUtil implements AutoCloseable {
      * @param databaseName   数据库名称
      * @param superTableName 超级表名称
      * @param tableName      表名
-     * @param rowValue       列
-     * @param rowTag         标签
+     * @param fields         列信息(key:列名称，value：列值)
+     * @param tags           标签信息(key：标签名称，value：标签值)
      */
-    public void asyncInsertRow(String databaseName, String superTableName, String tableName, Map<String, ?> rowValue, Map<String, ?> rowTag) {
-        config.asyncTaskUtil.submitTask(() -> insertRow(databaseName, superTableName, tableName, rowValue, rowTag), throwable -> {
+    public void asyncInsertRow(String databaseName, String superTableName, String tableName, Map<String, ?> fields, Map<String, ?> tags) {
+        config.asyncTaskUtil.submitTask(() -> insertRow(databaseName, superTableName, tableName, fields, tags), throwable -> {
             if (throwable != null) {
                 log.error(throwable.getMessage());
             }
@@ -133,23 +134,26 @@ public class TDengineUtil implements AutoCloseable {
      * @param databaseName   数据库名称
      * @param superTableName 超级表名称
      * @param tableName      表名
-     * @param row            行数据，包括标签数据
+     * @param fieldsAndTags  行数据，包括列和标签数据(key：列名或者标签名，value：列值或者标签值)
      */
-    public void insertRow(String databaseName, String superTableName, String tableName, Map<String, ?> row) {
-        List<String> columnNames = new ArrayList<>();
-        List<String> columnValues = new ArrayList<>();
-        row.forEach((key, value) -> {
-            columnNames.add("`" + key + "`");
+    public void insertRow(String databaseName, String superTableName, String tableName, Map<String, ?> fieldsAndTags) {
+        List<String> fieldAndTagNames = new ArrayList<>();
+        List<String> fieldAndTagValues = new ArrayList<>();
+        fieldsAndTags.forEach((key, value) -> {
+            fieldAndTagNames.add("`" + key + "`");
             if (value != null) {
-                columnValues.add("'" + Convert.toStr(value) + "'");
+                fieldAndTagValues.add("'" + Convert.toStr(value) + "'");
             } else {
-                columnValues.add(null);
+                fieldAndTagValues.add(null);
             }
         });
         // INSERT INTO `databaseName`.`superTableName` (`tbname`,`columnName1`,`tagName1` ,...) values ('表名','columnValue1','tagValue1' ,...)
-        String sql = StrUtil.format("INSERT INTO `" + databaseName + "`.`" + superTableName + "` (`tbname`,{}) values ('" + tableName + "',{})"
-                , CollUtil.join(columnNames, ",")
-                , CollUtil.join(columnValues, ",")
+        String sql = StrUtil.format("INSERT INTO `{}`.`{}` (`tbname`,{}) values ('{}',{})"
+                , databaseName
+                , superTableName
+                , CollUtil.join(fieldAndTagNames, ",")
+                , tableName
+                , CollUtil.join(fieldAndTagValues, ",")
         );
         executeUpdate(sql);
     }
@@ -160,23 +164,23 @@ public class TDengineUtil implements AutoCloseable {
      * @param databaseName   数据库名称
      * @param superTableName 超级表名称
      * @param tableName      表名
-     * @param rowValue       列
-     * @param rowTag         标签
+     * @param fields         列信息(key:列名称，value：列值)
+     * @param tags           标签信息(key：标签名称，value：标签值)
      */
-    public void insertRow(String databaseName, String superTableName, String tableName, Map<String, ?> rowValue, Map<String, ?> rowTag) {
-        List<String> columnNames = new ArrayList<>();
-        List<String> columnValues = new ArrayList<>();
-        rowValue.forEach((key, value) -> {
-            columnNames.add("`" + key + "`");
+    public void insertRow(String databaseName, String superTableName, String tableName, Map<String, ?> fields, Map<String, ?> tags) {
+        List<String> fieldNames = new ArrayList<>();
+        List<String> fieldValues = new ArrayList<>();
+        fields.forEach((key, value) -> {
+            fieldNames.add("`" + key + "`");
             if (value != null) {
-                columnValues.add("'" + Convert.toStr(value) + "'");
+                fieldValues.add("'" + Convert.toStr(value) + "'");
             } else {
-                columnValues.add(null);
+                fieldValues.add(null);
             }
         });
         List<String> tagNames = new ArrayList<>();
         List<String> tagValues = new ArrayList<>();
-        rowTag.forEach((key, value) -> {
+        tags.forEach((key, value) -> {
             tagNames.add("`" + key + "`");
             if (value != null) {
                 tagValues.add("'" + Convert.toStr(value) + "'");
@@ -192,8 +196,8 @@ public class TDengineUtil implements AutoCloseable {
                 , superTableName
                 , CollUtil.join(tagNames, ",")
                 , CollUtil.join(tagValues, ",")
-                , CollUtil.join(columnNames, ",")
-                , CollUtil.join(columnValues, ",")
+                , CollUtil.join(fieldNames, ",")
+                , CollUtil.join(fieldValues, ",")
         );
         executeUpdate(sql);
     }
@@ -216,6 +220,7 @@ public class TDengineUtil implements AutoCloseable {
      * 查询sql语句
      *
      * @param sql 查询sql
+     *
      * @return
      */
     public List<Map<String, Object>> executeQuery(String sql) {

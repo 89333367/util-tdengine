@@ -44,6 +44,7 @@
             <!-- 数据库版本和驱动对应关系 -->
             <!-- https://docs.taosdata.com/reference/connector/java/ -->
             <version>3.4.0</version>
+            <!--<version>3.7.4</version>-->
         </dependency>
         <dependency>
             <groupId>sunyu.util</groupId>
@@ -56,6 +57,7 @@
         <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
+            <!--<version>7.0.2</version>-->
             <version>4.0.3</version>
             <scope>test</scope>
         </dependency>

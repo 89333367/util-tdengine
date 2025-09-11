@@ -18,13 +18,38 @@ public class TestTDengineUtil {
     public DataSource getDataSource() {
         //数据源
         HikariConfig config = new HikariConfig();
-        //config.setDriverClassName("com.taosdata.jdbc.rs.RestfulDriver");
-        //config.setJdbcUrl("jdbc:TAOS-RS://192.168.13.87:16042/?batchfetch=true&httpConnectTimeout=60000&messageWaitTimeout=60000&httpPoolSize=20");
+
+        /*config.setDriverClassName("com.taosdata.jdbc.rs.RestfulDriver");
+        config.setJdbcUrl("jdbc:TAOS-RS://192.168.13.87:16042/?batchfetch=true&httpConnectTimeout=60000&messageWaitTimeout=60000&httpPoolSize=20");
+        config.setUsername("root");
+        config.setPassword("taosdata");*/
+
         config.setDriverClassName("com.taosdata.jdbc.ws.WebSocketDriver");
         config.setJdbcUrl("jdbc:TAOS-WS://192.168.13.87:16042/?httpConnectTimeout=60000&messageWaitTimeout=60000");
         config.setUsername("root");
         config.setPassword("taosdata");
+
+        /*config.setDriverClassName("com.taosdata.jdbc.ws.WebSocketDriver");
+        config.setJdbcUrl("jdbc:TAOS-WS://182.92.4.7:6041/?httpConnectTimeout=60000&messageWaitTimeout=60000");
+        config.setUsername("bcuser");
+        config.setPassword("Bcld&202509");*/
+
         return new HikariDataSource(config);
+    }
+
+    @Test
+    void showDatabases() {
+        TDengineUtil tdengineUtil = TDengineUtil.builder().dataSource(getDataSource()).build();
+        log.info("{}", tdengineUtil.executeQuery("show databases"));
+        tdengineUtil.close();
+    }
+
+    @Test
+    void query2() {
+        String sql = "select * from frequent.v_c limit 10";
+        TDengineUtil tdengineUtil = TDengineUtil.builder().dataSource(getDataSource()).build();
+        log.info("{}", tdengineUtil.executeQuery(sql));
+        tdengineUtil.close();
     }
 
 
