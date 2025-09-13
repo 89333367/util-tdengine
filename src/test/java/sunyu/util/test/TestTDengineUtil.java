@@ -1,5 +1,8 @@
 package sunyu.util.test;
 
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.thread.ThreadUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.zaxxer.hikari.HikariConfig;
@@ -24,17 +27,43 @@ public class TestTDengineUtil {
         config.setUsername("root");
         config.setPassword("taosdata");*/
 
-        config.setDriverClassName("com.taosdata.jdbc.ws.WebSocketDriver");
+        /*config.setDriverClassName("com.taosdata.jdbc.ws.WebSocketDriver");
         config.setJdbcUrl("jdbc:TAOS-WS://192.168.13.87:16042/?httpConnectTimeout=60000&messageWaitTimeout=60000");
         config.setUsername("root");
-        config.setPassword("taosdata");
+        config.setPassword("taosdata");*/
 
         /*config.setDriverClassName("com.taosdata.jdbc.ws.WebSocketDriver");
         config.setJdbcUrl("jdbc:TAOS-WS://182.92.4.7:6041/?httpConnectTimeout=60000&messageWaitTimeout=60000");
         config.setUsername("bcuser");
         config.setPassword("Bcld&202509");*/
 
+        config.setDriverClassName("com.taosdata.jdbc.ws.WebSocketDriver");
+        config.setJdbcUrl("jdbc:TAOS-WS://172.16.1.173:16041/?httpConnectTimeout=60000&messageWaitTimeout=60000");
+        config.setUsername("root");
+        config.setPassword("taosdata");
+
         return new HikariDataSource(config);
+    }
+
+    @Test
+    void killQuery() {
+        String sql = "select kill_id,sql from performance_schema.perf_queries where sql like 'select last(% where vin in (%'";
+        TDengineUtil tdengineUtil = TDengineUtil.builder().dataSource(getDataSource()).build();
+        while (true) {
+            List<Map<String, Object>> rows = tdengineUtil.executeQuery(sql);
+            if (CollUtil.isEmpty(rows)) {
+                break;
+            }
+            rows.forEach(row -> {
+                String killId = row.get("kill_id").toString();
+                String s = row.get("sql").toString();
+                String killSql = StrUtil.format("kill query '{}'", killId);
+                log.info("执行kill query: {} {}", killSql, s);
+                tdengineUtil.executeUpdate(killSql);
+            });
+            ThreadUtil.sleep(1000 * 5);
+        }
+        tdengineUtil.close();
     }
 
     @Test
