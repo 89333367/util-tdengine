@@ -1,16 +1,20 @@
 package sunyu.util.test;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.io.resource.ResourceUtil;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import cn.hutool.poi.excel.ExcelReader;
+import cn.hutool.poi.excel.ExcelUtil;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.Test;
 import sunyu.util.TDengineUtil;
 
 import javax.sql.DataSource;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,18 +36,60 @@ public class TestTDengineUtil {
         config.setUsername("root");
         config.setPassword("taosdata");*/
 
-        /*config.setDriverClassName("com.taosdata.jdbc.ws.WebSocketDriver");
+        config.setDriverClassName("com.taosdata.jdbc.ws.WebSocketDriver");
         config.setJdbcUrl("jdbc:TAOS-WS://182.92.4.7:6041/?httpConnectTimeout=60000&messageWaitTimeout=60000");
         config.setUsername("bcuser");
-        config.setPassword("Bcld&202509");*/
+        config.setPassword("Bcld&202509");
 
-        config.setDriverClassName("com.taosdata.jdbc.ws.WebSocketDriver");
+        /*config.setDriverClassName("com.taosdata.jdbc.ws.WebSocketDriver");
         config.setJdbcUrl("jdbc:TAOS-WS://172.16.1.173:16041/?httpConnectTimeout=60000&messageWaitTimeout=60000");
         config.setUsername("root");
-        config.setPassword("taosdata");
+        config.setPassword("taosdata");*/
 
         return new HikariDataSource(config);
     }
+
+    @Test
+    void dfStatistics() {
+        TDengineUtil tdengineUtil = TDengineUtil.builder().dataSource(getDataSource()).build();
+        String databaseName = "nrvp";
+        String superTableName = "v_s";
+        String vehicleId = "DF112041AP4H14313";
+        String vehicleModel = "1204-1";
+        String tableName = superTableName + "_" + vehicleId;
+        // 计算 每日发动机工作时间
+        String sql = StrUtil.format(ResourceUtil.readUtf8Str("workHours.sql"), vehicleId);
+        log.debug("{}", sql);
+        for (Map<String, Object> rows : tdengineUtil.executeQuery(sql)) {
+            rows.put("vehicleId", vehicleId);
+            rows.put("vehicleModel", vehicleModel);
+            log.debug("{}", rows);
+            tdengineUtil.asyncInsertRow(databaseName, superTableName, tableName, rows);
+        }
+        tdengineUtil.awaitAllTasks();//等待写入完毕
+        // 计算 单车每日油耗 + 基于燃油消耗的能耗
+        sql = StrUtil.format(ResourceUtil.readUtf8Str("fuelConsumption_energyByFuelConsumption.sql"), vehicleId);
+        log.debug("{}", sql);
+        for (Map<String, Object> rows : tdengineUtil.executeQuery(sql)) {
+            rows.put("vehicleId", vehicleId);
+            rows.put("vehicleModel", vehicleModel);
+            log.debug("{}", rows);
+            tdengineUtil.asyncInsertRow(databaseName, superTableName, tableName, rows);
+        }
+        tdengineUtil.awaitAllTasks();//等待写入完毕
+        // 读取 统计规则
+        tdengineUtil.close();
+    }
+
+    @Test
+    void testResourceFile() {
+        InputStream stream = ResourceUtil.getStream("统计规则.xlsx");
+        ExcelReader reader = ExcelUtil.getReader(stream);
+        List<Map<String, Object>> params = reader.readAll();
+        log.debug("{}", params);
+        reader.close();
+    }
+
 
     @Test
     void killQuery() {

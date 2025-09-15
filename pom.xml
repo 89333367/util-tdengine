@@ -59,7 +59,13 @@
             <artifactId>HikariCP</artifactId>
             <!--<version>7.0.2</version>-->
             <version>4.0.3</version>
-            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>sunyu.util</groupId>
+            <artifactId>util-excel</artifactId>
+            <!-- {util.version}_{jdk.version}_{architecture.version} -->
+            <version>1.0_jdk8_x64</version>
+            <classifier>shaded</classifier>
         </dependency>
         <!-- https://central.sonatype.com/artifact/org.junit.jupiter/junit-jupiter/versions -->
         <dependency>
