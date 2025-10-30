@@ -1,18 +1,24 @@
 package sunyu.util;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.sql.DataSource;
+
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.convert.Convert;
 import cn.hutool.core.exceptions.ExceptionUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
-
-import javax.sql.DataSource;
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * TDengine工具类
@@ -101,12 +107,14 @@ public class TDengineUtil implements AutoCloseable {
      * @param tableName      表名
      * @param fieldsAndTags  行数据，包括列和标签数据(key：列名或者标签名，value：列值或者标签值)
      */
-    public void asyncInsertRow(String databaseName, String superTableName, String tableName, Map<String, ?> fieldsAndTags) {
-        config.asyncTaskUtil.submitTask(() -> insertRow(databaseName, superTableName, tableName, fieldsAndTags), throwable -> {
-            if (throwable != null) {
-                log.error(throwable.getMessage());
-            }
-        }, null);
+    public void asyncInsertRow(String databaseName, String superTableName, String tableName,
+            Map<String, ?> fieldsAndTags) {
+        config.asyncTaskUtil.submitTask(() -> insertRow(databaseName, superTableName, tableName, fieldsAndTags),
+                throwable -> {
+                    if (throwable != null) {
+                        log.error(throwable.getMessage());
+                    }
+                }, null);
     }
 
     /**
@@ -119,14 +127,15 @@ public class TDengineUtil implements AutoCloseable {
      * @param fields         列信息(key:列名称，value：列值)
      * @param tags           标签信息(key：标签名称，value：标签值)
      */
-    public void asyncInsertRow(String databaseName, String superTableName, String tableName, Map<String, ?> fields, Map<String, ?> tags) {
-        config.asyncTaskUtil.submitTask(() -> insertRow(databaseName, superTableName, tableName, fields, tags), throwable -> {
-            if (throwable != null) {
-                log.error(throwable.getMessage());
-            }
-        }, null);
+    public void asyncInsertRow(String databaseName, String superTableName, String tableName, Map<String, ?> fields,
+            Map<String, ?> tags) {
+        config.asyncTaskUtil.submitTask(() -> insertRow(databaseName, superTableName, tableName, fields, tags),
+                throwable -> {
+                    if (throwable != null) {
+                        log.error(throwable.getMessage());
+                    }
+                }, null);
     }
-
 
     /**
      * 插入一条记录 （TDengine3.3版本开始使用这种写法）
@@ -148,13 +157,8 @@ public class TDengineUtil implements AutoCloseable {
             }
         });
         // INSERT INTO `databaseName`.`superTableName` (`tbname`,`columnName1`,`tagName1` ,...) values ('表名','columnValue1','tagValue1' ,...)
-        String sql = StrUtil.format("INSERT INTO `{}`.`{}` (`tbname`,{}) values ('{}',{})"
-                , databaseName
-                , superTableName
-                , CollUtil.join(fieldAndTagNames, ",")
-                , tableName
-                , CollUtil.join(fieldAndTagValues, ",")
-        );
+        String sql = StrUtil.format("INSERT INTO `{}`.`{}` (`tbname`,{}) values ('{}',{})", databaseName,
+                superTableName, CollUtil.join(fieldAndTagNames, ","), tableName, CollUtil.join(fieldAndTagValues, ","));
         executeUpdate(sql);
     }
 
@@ -167,7 +171,8 @@ public class TDengineUtil implements AutoCloseable {
      * @param fields         列信息(key:列名称，value：列值)
      * @param tags           标签信息(key：标签名称，value：标签值)
      */
-    public void insertRow(String databaseName, String superTableName, String tableName, Map<String, ?> fields, Map<String, ?> tags) {
+    public void insertRow(String databaseName, String superTableName, String tableName, Map<String, ?> fields,
+            Map<String, ?> tags) {
         List<String> fieldNames = new ArrayList<>();
         List<String> fieldValues = new ArrayList<>();
         fields.forEach((key, value) -> {
@@ -189,16 +194,9 @@ public class TDengineUtil implements AutoCloseable {
             }
         });
         // INSERT INTO `databaseName`.`tableName` USING `databaseName`.`superTableName` (`tagName1`,...) TAGS ('tagValue1',...) (`fieldName1`,...) VALUES ('value1',...)
-        String sql = StrUtil.format("INSERT INTO `{}`.`{}` USING `{}`.`{}` ({}) TAGS ({}) ({}) VALUES ({})"
-                , databaseName
-                , tableName
-                , databaseName
-                , superTableName
-                , CollUtil.join(tagNames, ",")
-                , CollUtil.join(tagValues, ",")
-                , CollUtil.join(fieldNames, ",")
-                , CollUtil.join(fieldValues, ",")
-        );
+        String sql = StrUtil.format("INSERT INTO `{}`.`{}` USING `{}`.`{}` ({}) TAGS ({}) ({}) VALUES ({})",
+                databaseName, tableName, databaseName, superTableName, CollUtil.join(tagNames, ","),
+                CollUtil.join(tagValues, ","), CollUtil.join(fieldNames, ","), CollUtil.join(fieldValues, ","));
         executeUpdate(sql);
     }
 
@@ -224,7 +222,9 @@ public class TDengineUtil implements AutoCloseable {
      * @return
      */
     public List<Map<String, Object>> executeQuery(String sql) {
-        try (Connection conn = config.dataSource.getConnection(); Statement stmt = conn.createStatement(); ResultSet resultSet = stmt.executeQuery(sql);) {
+        try (Connection conn = config.dataSource.getConnection();
+                Statement stmt = conn.createStatement();
+                ResultSet resultSet = stmt.executeQuery(sql);) {
             List<Map<String, Object>> rows = new ArrayList<>();
             ResultSetMetaData metaData = resultSet.getMetaData();
             int columnCount = metaData.getColumnCount();

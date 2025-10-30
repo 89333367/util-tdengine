@@ -1,19 +1,22 @@
 package sunyu.util.test;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.sql.DataSource;
+
+import org.junit.jupiter.api.Test;
+
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
-import org.junit.jupiter.api.Test;
 import sunyu.util.TDengineUtil;
-
-import javax.sql.DataSource;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class TestTDengineUtil {
     Log log = LogFactory.get();
@@ -80,7 +83,6 @@ public class TestTDengineUtil {
         log.info("{}", tdengineUtil.executeQuery(sql));
         tdengineUtil.close();
     }
-
 
     @Test
     void createDatabase() {
@@ -188,6 +190,5 @@ public class TestTDengineUtil {
         log.info("查询结果: {}", rows);
         tdengineUtil.close();
     }
-
 
 }
