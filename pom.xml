@@ -99,23 +99,18 @@
                                 </relocation>
                                 <!-- 重命名Jackson包 -->
                                 <relocation>
-                                    <pattern>com.fasterxml.jackson</pattern>
-                                    <shadedPattern>sunyu.util.relocations.tdengine.com.fasterxml.jackson</shadedPattern>
+                                    <pattern>com.fasterxml</pattern>
+                                    <shadedPattern>sunyu.util.relocations.tdengine.com.fasterxml</shadedPattern>
                                 </relocation>
-                                <!-- 重命名Google Guava包 -->
+                                <!-- 重命名Google包 -->
                                 <relocation>
-                                    <pattern>com.google.common</pattern>
-                                    <shadedPattern>sunyu.util.relocations.tdengine.com.google.common</shadedPattern>
+                                    <pattern>com.google</pattern>
+                                    <shadedPattern>sunyu.util.relocations.tdengine.com.google</shadedPattern>
                                 </relocation>
-                                <!-- 重命名Apache HttpClient包 -->
+                                <!-- 重命名Apache包 -->
                                 <relocation>
-                                    <pattern>org.apache.http</pattern>
-                                    <shadedPattern>sunyu.util.relocations.tdengine.org.apache.http</shadedPattern>
-                                </relocation>
-                                <!-- 重命名Java WebSocket包 -->
-                                <relocation>
-                                    <pattern>org.java_websocket</pattern>
-                                    <shadedPattern>sunyu.util.relocations.tdengine.org.java_websocket</shadedPattern>
+                                    <pattern>org.apache</pattern>
+                                    <shadedPattern>sunyu.util.relocations.tdengine.org.apache</shadedPattern>
                                 </relocation>
                             </relocations>
                             <transformers>

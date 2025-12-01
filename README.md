@@ -224,5 +224,3 @@ new BigDecimal((Double)row.get("columnName")).toPlainString()
 ## Spark Demo
 
 [查看示例源码](https://github.com/89333367/demo-spark-hdfs-to-tdengine)
-
-
