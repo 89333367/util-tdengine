@@ -13,8 +13,8 @@
 <dependency>
    <groupId>sunyu.util</groupId>
    <artifactId>util-tdengine</artifactId>
-   <!-- {util.version}_{jdk.version}_{architecture.version} -->
-   <version>1.0_jdk8_x64</version>
+    <!-- {taos-jdbcdriver.version}_{util.version}_{jdk.version}_{architecture.version} -->
+    <version>3.4.0_1.0_jdk8_x64</version>
    <classifier>shaded</classifier>
 </dependency>
 ```

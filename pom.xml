@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>sunyu.util</groupId>
     <artifactId>util-tdengine</artifactId>
-    <!-- {util.version}_{jdk.version}_{architecture.version} -->
-    <version>1.0_jdk8_x64</version>
+    <!-- {taos-jdbcdriver.version}_{util.version}_{jdk.version}_{architecture.version} -->
+    <version>3.4.0_1.0_jdk8_x64</version>
 
     <properties>
         <java.version>1.8</java.version>
@@ -44,7 +44,6 @@
             <!-- 数据库版本和驱动对应关系 -->
             <!-- https://docs.taosdata.com/reference/connector/java/ -->
             <version>3.4.0</version>
-            <!--<version>3.7.6</version>-->
         </dependency>
         <dependency>
             <groupId>sunyu.util</groupId>
@@ -57,15 +56,20 @@
         <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
-            <!--<version>7.0.2</version>-->
             <version>4.0.3</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <artifactId>slf4j-api</artifactId>
+                    <groupId>org.slf4j</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- https://central.sonatype.com/artifact/org.junit.jupiter/junit-jupiter/versions -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>5.14.0</version>
+            <version>5.14.1</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -85,14 +89,52 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <!-- 添加以下配置来禁用 dependency-reduced-pom.xml 文件生成 -->
+                            <!-- 禁用 dependency-reduced-pom.xml 文件生成 -->
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <relocations>
-                                <!--<relocation>
+                                <!-- 重命名Hutool包 -->
+                                <relocation>
+                                    <pattern>cn.hutool</pattern>
+                                    <shadedPattern>sunyu.util.relocations.tdengine.cn.hutool</shadedPattern>
+                                </relocation>
+                                <!-- 重命名Jackson包 -->
+                                <relocation>
                                     <pattern>com.fasterxml.jackson</pattern>
-                                    <shadedPattern>shaded.com.fasterxml.jackson</shadedPattern>
-                                </relocation>-->
+                                    <shadedPattern>sunyu.util.relocations.tdengine.com.fasterxml.jackson</shadedPattern>
+                                </relocation>
+                                <!-- 重命名Google Guava包 -->
+                                <relocation>
+                                    <pattern>com.google.common</pattern>
+                                    <shadedPattern>sunyu.util.relocations.tdengine.com.google.common</shadedPattern>
+                                </relocation>
+                                <!-- 重命名Apache HttpClient包 -->
+                                <relocation>
+                                    <pattern>org.apache.http</pattern>
+                                    <shadedPattern>sunyu.util.relocations.tdengine.org.apache.http</shadedPattern>
+                                </relocation>
+                                <!-- 重命名Java WebSocket包 -->
+                                <relocation>
+                                    <pattern>org.java_websocket</pattern>
+                                    <shadedPattern>sunyu.util.relocations.tdengine.org.java_websocket</shadedPattern>
+                                </relocation>
                             </relocations>
+                            <transformers>
+                                <!-- 合并META-INF/services文件 -->
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <!-- 处理Apache的META-INF/DISCLAIMER文件 -->
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/DISCLAIMER</resource>
+                                </transformer>
+                                <!-- 处理MANIFEST.MF文件 -->
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <manifestEntries>
+                                        <Multi-Release>true</Multi-Release>
+                                    </manifestEntries>
+                                </transformer>
+                            </transformers>
                             <shadedArtifactAttached>true</shadedArtifactAttached>
                             <shadedClassifierName>shaded</shadedClassifierName>
                             <filters>
@@ -103,7 +145,9 @@
                                         <exclude>META-INF/*.SF</exclude>
                                         <exclude>META-INF/*.DSA</exclude>
                                         <exclude>META-INF/*.RSA</exclude>
-                                        <!-- 可选：保留其他静态资源，必要时再按需排除 -->
+                                        <!-- 排除重复的NOTICE文件 -->
+                                        <exclude>META-INF/NOTICE*</exclude>
+                                        <exclude>META-INF/LICENSE*</exclude>
                                     </excludes>
                                 </filter>
                             </filters>
@@ -118,7 +162,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>3.3.1</version>
+                <version>3.4.0</version>
                 <executions>
                     <execution>
                         <phase>compile</phase>
