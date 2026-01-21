@@ -14,7 +14,7 @@
    <groupId>sunyu.util</groupId>
    <artifactId>util-tdengine</artifactId>
     <!-- {taos-jdbcdriver.version}_{util.version}_{jdk.version}_{architecture.version} -->
-    <version>3.4.0_1.0_jdk8_x64</version>
+    <version>3.8.0_1.0_jdk8_x64</version>
    <classifier>shaded</classifier>
 </dependency>
 ```
@@ -44,9 +44,7 @@
 ```properties
 # 数据源配置
 spring.datasource.driver-class-name=com.taosdata.jdbc.ws.WebSocketDriver
-spring.datasource.url=jdbc:TAOS-WS://192.168.13.87:16042/?httpConnectTimeout=60000&messageWaitTimeout=60000
-#spring.datasource.driver-class-name=com.taosdata.jdbc.rs.RestfulDriver
-#spring.datasource.url=jdbc:TAOS-RS://192.168.13.87:16042/?batchfetch=true&httpConnectTimeout=60000&messageWaitTimeout=60000&httpPoolSize=20
+spring.datasource.url=jdbc:TAOS-WS://192.168.13.111:6041,192.168.13.112:6041,192.168.13.113:6041/?varcharAsString=true
 spring.datasource.username=root
 spring.datasource.password=taosdata
 spring.datasource.hikari.minimum-idle=0
@@ -57,9 +55,7 @@ spring.datasource.hikari.maximum-pool-size=10
 # 动态数据源配置
 spring.datasource.dynamic.primary=tdengine
 spring.datasource.dynamic.datasource.tdengine.driver-class-name=com.taosdata.jdbc.ws.WebSocketDriver
-spring.datasource.dynamic.datasource.tdengine.url=jdbc:TAOS-WS://192.168.13.87:16042/?httpConnectTimeout=60000&messageWaitTimeout=60000
-#spring.datasource.dynamic.datasource.tdengine.driver-class-name=com.taosdata.jdbc.rs.RestfulDriver
-#spring.datasource.dynamic.datasource.tdengine.url=jdbc:TAOS-RS://192.168.13.87:16042/?batchfetch=true&httpConnectTimeout=60000&messageWaitTimeout=60000&httpPoolSize=20
+spring.datasource.dynamic.datasource.tdengine.url=jdbc:TAOS-WS://192.168.13.111:6041,192.168.13.112:6041,192.168.13.113:6041/?varcharAsString=true
 spring.datasource.dynamic.datasource.tdengine.username=root
 spring.datasource.dynamic.datasource.tdengine.password=taosdata
 spring.datasource.dynamic.hikari.min-idle=0

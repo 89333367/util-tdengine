@@ -7,7 +7,7 @@
     <groupId>sunyu.util</groupId>
     <artifactId>util-tdengine</artifactId>
     <!-- {taos-jdbcdriver.version}_{util.version}_{jdk.version}_{architecture.version} -->
-    <version>3.4.0_1.0_jdk8_x64</version>
+    <version>3.8.0_1.0_jdk8_x64</version>
 
     <properties>
         <java.version>1.8</java.version>
@@ -35,7 +35,7 @@
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
-            <version>5.8.42</version>
+            <version>5.8.43</version>
         </dependency>
         <!-- https://central.sonatype.com/artifact/com.taosdata.jdbc/taos-jdbcdriver/versions -->
         <dependency>
@@ -43,14 +43,8 @@
             <artifactId>taos-jdbcdriver</artifactId>
             <!-- 数据库版本和驱动对应关系 -->
             <!-- https://docs.taosdata.com/reference/connector/java/ -->
-            <version>3.4.0</version>
-        </dependency>
-        <dependency>
-            <groupId>sunyu.util</groupId>
-            <artifactId>util-async-task</artifactId>
-            <!-- {util.version}_{jdk.version}_{architecture.version} -->
-            <version>1.0_jdk8_x64</version>
-            <classifier>shaded</classifier>
+            <!--<version>3.4.0</version>-->
+            <version>3.8.0</version>
         </dependency>
         <!-- https://central.sonatype.com/artifact/com.zaxxer/HikariCP/versions -->
         <dependency>
@@ -58,18 +52,12 @@
             <artifactId>HikariCP</artifactId>
             <version>4.0.3</version>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <artifactId>slf4j-api</artifactId>
-                    <groupId>org.slf4j</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <!-- https://central.sonatype.com/artifact/org.junit.jupiter/junit-jupiter/versions -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>5.14.1</version>
+            <version>5.14.2</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -111,6 +99,16 @@
                                 <relocation>
                                     <pattern>org.apache</pattern>
                                     <shadedPattern>sunyu.util.relocations.tdengine.org.apache</shadedPattern>
+                                </relocation>
+                                <!-- 重命名Netty包 -->
+                                <relocation>
+                                    <pattern>io.netty</pattern>
+                                    <shadedPattern>sunyu.util.relocations.tdengine.io.netty</shadedPattern>
+                                </relocation>
+                                <!-- 重命名Project Reactor -->
+                                <relocation>
+                                    <pattern>reactor</pattern>
+                                    <shadedPattern>sunyu.util.relocations.tdengine.reactor</shadedPattern>
                                 </relocation>
                             </relocations>
                             <transformers>
