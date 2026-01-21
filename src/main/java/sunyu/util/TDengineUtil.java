@@ -65,6 +65,7 @@ public class TDengineUtil implements AutoCloseable {
         private final String insertSqlPre = "INSERT INTO";
         private final StringBuilder sqlBuilder = new StringBuilder();
         private Integer maxSqlLength = 1024 * 512;
+        private Boolean showSql = false;
     }
 
     public static class Builder {
@@ -104,6 +105,17 @@ public class TDengineUtil implements AutoCloseable {
          */
         public Builder setMaxSqlLength(int maxSqlLength) {
             config.maxSqlLength = maxSqlLength;
+            return this;
+        }
+
+        /**
+         * 是否显示SQL
+         *
+         * @param showSql
+         * @return
+         */
+        public Builder setShowSql(boolean showSql) {
+            config.showSql = showSql;
             return this;
         }
     }
@@ -277,6 +289,9 @@ public class TDengineUtil implements AutoCloseable {
      * @param sql sql语句
      */
     public void executeUpdate(String sql) {
+        if (config.showSql) {
+            log.info("执行SQL: {}", sql);
+        }
         try (Connection conn = config.dataSource.getConnection(); Statement stmt = conn.createStatement();) {
             stmt.executeUpdate(sql);
         } catch (Exception e) {
@@ -292,6 +307,9 @@ public class TDengineUtil implements AutoCloseable {
      * @return
      */
     public List<Map<String, Object>> executeQuery(String sql) {
+        if (config.showSql) {
+            log.info("执行SQL: {}", sql);
+        }
         try (Connection conn = config.dataSource.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet resultSet = stmt.executeQuery(sql);) {
