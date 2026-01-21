@@ -1,5 +1,7 @@
 package sunyu.util.test;
 
+import cn.hutool.core.date.DateField;
+import cn.hutool.core.date.DateTime;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import cn.hutool.setting.dialect.Props;
@@ -28,7 +30,7 @@ public class TestTDengineUtil {
         config.setMinimumIdle(0);
         config.setMaximumPoolSize(10);
         HikariDataSource ds = new HikariDataSource(config);
-        tDengineUtil = TDengineUtil.builder().dataSource(ds).setMaxConcurrency(10).setMaxSqlLength(1024 * 512).build();
+        tDengineUtil = TDengineUtil.builder().dataSource(ds).setMaxConcurrency(10).setMaxSqlLength(1024 * 1024).setShowSql(true).build();
     }
 
     @Test
@@ -38,6 +40,19 @@ public class TestTDengineUtil {
             put("protocol", "xxx");
             put("did", "test");
         }});
+        tDengineUtil.awaitAllTasks();
+    }
+
+    @Test
+    void t002() {
+        DateTime dt = new DateTime("2026-01-21 00:00:00");
+        for (int i = 0; i < 20000; i++) {
+            tDengineUtil.asyncInsertRow("frequent", "d_p", "test", new HashMap<String, Object>() {{
+                put("3014", dt.offset(DateField.SECOND, 1));
+                put("protocol", "xxx");
+                put("did", "test");
+            }});
+        }
         tDengineUtil.awaitAllTasks();
     }
 

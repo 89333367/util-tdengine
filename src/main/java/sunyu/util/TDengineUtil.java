@@ -64,7 +64,7 @@ public class TDengineUtil implements AutoCloseable {
         private Integer maxConcurrency = 10;
         private final String insertSqlPre = "INSERT INTO";
         private final StringBuilder sqlBuilder = new StringBuilder();
-        private Integer maxSqlLength = 1024 * 512;
+        private Integer maxSqlLength = 1024 * 1024;
         private Boolean showSql = false;
     }
 
@@ -78,8 +78,8 @@ public class TDengineUtil implements AutoCloseable {
         /**
          * 设置数据源
          *
-         * @param dataSource
-         * @return
+         * @param dataSource 数据源
+         * @return 构建器
          */
         public Builder dataSource(DataSource dataSource) {
             config.dataSource = dataSource;
@@ -88,9 +88,11 @@ public class TDengineUtil implements AutoCloseable {
 
         /**
          * 设置最大并发执行数量
+         * <p>
+         * 默认10
          *
-         * @param maxConcurrency
-         * @return
+         * @param maxConcurrency 最大并发执行数量
+         * @return 构建器
          */
         public Builder setMaxConcurrency(int maxConcurrency) {
             config.maxConcurrency = maxConcurrency;
@@ -99,9 +101,11 @@ public class TDengineUtil implements AutoCloseable {
 
         /**
          * 设置最大SQL长度
+         * <p>
+         * 默认1024*1024字节
          *
-         * @param maxSqlLength
-         * @return
+         * @param maxSqlLength 最大SQL长度
+         * @return 构建器
          */
         public Builder setMaxSqlLength(int maxSqlLength) {
             config.maxSqlLength = maxSqlLength;
@@ -109,10 +113,12 @@ public class TDengineUtil implements AutoCloseable {
         }
 
         /**
-         * 是否显示SQL
+         * 是否显示执行SQL
+         * <p>
+         * 默认false
          *
-         * @param showSql
-         * @return
+         * @param showSql 是否显示执行SQL
+         * @return 构建器
          */
         public Builder setShowSql(boolean showSql) {
             config.showSql = showSql;
