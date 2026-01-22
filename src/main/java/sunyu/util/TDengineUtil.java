@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * TDengine工具类
@@ -32,36 +31,14 @@ public class TDengineUtil implements AutoCloseable {
 
     private TDengineUtil(Config config) {
         log.info("[构建 {}] 开始", this.getClass().getSimpleName());
-        config.sqlQueue = new LinkedBlockingQueue<>(config.maxConcurrency);
+
         log.info("[构建 {}] 结束", this.getClass().getSimpleName());
 
         this.config = config;
-
-        for (int i = 0; i < config.maxConcurrency; i++) {
-            ThreadUtil.execute(() -> {
-                try {
-                    String sql = config.sqlQueue.take();//获取一条sql
-                    while (true) {//确保一定执行成功
-                        try {
-                            executeUpdate(sql);
-                            config.awaitableCounter.decrement();//执行完成后减少计数
-                            break;
-                        } catch (Exception e) {
-                            ThreadUtil.sleep(1000 * 10); // 10秒后重试
-                        }
-                    }
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            });
-        }
     }
 
     private static class Config {
         private DataSource dataSource;
-        private final AwaitableCounter awaitableCounter = new AwaitableCounter();
-        private LinkedBlockingQueue<String> sqlQueue;
-        private Integer maxConcurrency = 10;
         private final String insertSqlPre = "INSERT INTO";
         private final StringBuilder sqlBuilder = new StringBuilder();
         private Integer maxSqlLength = 1024 * 1024;
@@ -87,22 +64,9 @@ public class TDengineUtil implements AutoCloseable {
         }
 
         /**
-         * 设置最大并发执行数量
-         * <p>
-         * 默认10
-         *
-         * @param maxConcurrency 最大并发执行数量
-         * @return 构建器
-         */
-        public Builder setMaxConcurrency(int maxConcurrency) {
-            config.maxConcurrency = maxConcurrency;
-            return this;
-        }
-
-        /**
          * 设置最大SQL长度
          * <p>
-         * 默认1024*1024字节
+         * 默认1024 * 1024字节
          *
          * @param maxSqlLength 最大SQL长度
          * @return 构建器
@@ -132,34 +96,31 @@ public class TDengineUtil implements AutoCloseable {
     @Override
     public void close() {
         log.info("[销毁 {}] 开始", this.getClass().getSimpleName());
-        awaitAllTasks();
+        await();
         log.info("[销毁 {}] 结束", this.getClass().getSimpleName());
     }
 
-    synchronized public void appendSql(String sql) {
-        if (sql == null) {//代表有人执行了awaitAllTasks
+    synchronized private void appendSql(String sql) {
+        if (sql == null) {//代表有人执行了await
             if (config.sqlBuilder.length() > 0) {
-                putQueue();
+                executeInsertBatch();
             }
             return;
         }
         if (config.insertSqlPre.length() + config.sqlBuilder.length() + sql.length() >= config.maxSqlLength) {
             // 不可中断的put操作：一直等待直到成功
-            putQueue();
+            executeInsertBatch();
         }
         config.sqlBuilder.append(sql);
     }
 
-    private void putQueue() {
-        // 不可中断的put操作：一直等待直到成功
-        while (true) {
+    private void executeInsertBatch() {
+        while (true) {//确保一定执行成功
             try {
-                config.sqlQueue.put(config.insertSqlPre + config.sqlBuilder);
-                config.awaitableCounter.increment();//增加计数
-                break; // 成功，退出循环
-            } catch (InterruptedException e) {
-                // 被中断，清除中断标志后继续等待
-                Thread.interrupted(); // 清除中断标志，继续循环
+                executeSql(config.insertSqlPre + config.sqlBuilder);
+                break;
+            } catch (Exception e) {
+                ThreadUtil.sleep(1000 * 10); // 10秒后重试
             }
         }
         config.sqlBuilder.setLength(0);
@@ -168,13 +129,12 @@ public class TDengineUtil implements AutoCloseable {
     /**
      * 等待所有任务完成
      */
-    public void awaitAllTasks() {
+    public void await() {
         appendSql(null);
-        config.awaitableCounter.awaitZero();
     }
 
     /**
-     * 异步插入一条记录，需要在合适的位置调用awaitAllTasks方法，避免还未写入完毕就结束程序
+     * 异步插入一条记录，需要在合适的位置调用await方法，避免还未写入完毕就结束程序
      * （TDengine3.3版本开始使用这种写法）
      *
      * @param databaseName   数据库名称
@@ -182,7 +142,7 @@ public class TDengineUtil implements AutoCloseable {
      * @param tableName      表名
      * @param fieldsAndTags  行数据，包括列和标签数据(key：列名或者标签名，value：列值或者标签值)
      */
-    public void asyncInsertRow(String databaseName, String superTableName, String tableName, Map<String, ?> fieldsAndTags) {
+    public void appendInsert(String databaseName, String superTableName, String tableName, Map<String, ?> fieldsAndTags) {
         String sql = genSqlv33(databaseName, superTableName, tableName, fieldsAndTags);
         appendSql(sql);
     }
@@ -207,13 +167,14 @@ public class TDengineUtil implements AutoCloseable {
                 fieldAndTagValues.add("'" + Convert.toStr(value) + "'");
             }
         });
+        // 注意这里没有 INSERT INTO
         String sql = StrUtil.format(" `{}`.`{}` (`tbname`,{}) values ('{}',{}) ", databaseName, superTableName,
                 CollUtil.join(fieldAndTagNames, ","), tableName, CollUtil.join(fieldAndTagValues, ","));
         return sql;
     }
 
     /**
-     * 异步插入一条记录，需要在合适的位置调用awaitAllTasks方法，避免还未写入完毕就结束程序
+     * 异步插入一条记录，需要在合适的位置调用await方法，避免还未写入完毕就结束程序
      * （TDengine3.3版本以前使用这种写法）
      *
      * @param databaseName   数据库名称
@@ -222,8 +183,8 @@ public class TDengineUtil implements AutoCloseable {
      * @param fields         列信息(key:列名称，value：列值)
      * @param tags           标签信息(key：标签名称，value：标签值)
      */
-    public void asyncInsertRow(String databaseName, String superTableName, String tableName, Map<String, ?> fields,
-                               Map<String, ?> tags) {
+    public void appendInsert(String databaseName, String superTableName, String tableName, Map<String, ?> fields,
+                             Map<String, ?> tags) {
         String sql = genSql(databaseName, superTableName, tableName, fields, tags);
         appendSql(sql);
     }
@@ -255,6 +216,7 @@ public class TDengineUtil implements AutoCloseable {
                 tagValues.add("'" + Convert.toStr(value) + "'");
             }
         });
+        // 注意这里没有 INSERT INTO
         String sql = StrUtil.format(" `{}`.`{}` USING `{}`.`{}` ({}) TAGS ({}) ({}) VALUES ({}) ",
                 databaseName, tableName, databaseName, superTableName, CollUtil.join(tagNames, ","),
                 CollUtil.join(tagValues, ","), CollUtil.join(fieldNames, ","), CollUtil.join(fieldValues, ","));
@@ -269,9 +231,9 @@ public class TDengineUtil implements AutoCloseable {
      * @param tableName      表名
      * @param fieldsAndTags  行数据，包括列和标签数据(key：列名或者标签名，value：列值或者标签值)
      */
-    public void insertRow(String databaseName, String superTableName, String tableName, Map<String, ?> fieldsAndTags) {
+    public void insert(String databaseName, String superTableName, String tableName, Map<String, ?> fieldsAndTags) {
         String sql = genSqlv33(databaseName, superTableName, tableName, fieldsAndTags);
-        executeUpdate(sql);
+        executeSql(config.insertSqlPre + sql);
     }
 
     /**
@@ -283,10 +245,9 @@ public class TDengineUtil implements AutoCloseable {
      * @param fields         列信息(key:列名称，value：列值)
      * @param tags           标签信息(key：标签名称，value：标签值)
      */
-    public void insertRow(String databaseName, String superTableName, String tableName, Map<String, ?> fields,
-                          Map<String, ?> tags) {
+    public void insert(String databaseName, String superTableName, String tableName, Map<String, ?> fields, Map<String, ?> tags) {
         String sql = genSql(databaseName, superTableName, tableName, fields, tags);
-        executeUpdate(sql);
+        executeSql(config.insertSqlPre + sql);
     }
 
     /**
@@ -294,7 +255,7 @@ public class TDengineUtil implements AutoCloseable {
      *
      * @param sql sql语句
      */
-    public void executeUpdate(String sql) {
+    public void executeSql(String sql) {
         if (config.showSql) {
             log.info("执行SQL: {}", sql);
         }
@@ -312,7 +273,7 @@ public class TDengineUtil implements AutoCloseable {
      * @param sql 查询sql
      * @return
      */
-    public List<Map<String, Object>> executeQuery(String sql) {
+    public List<Map<String, Object>> querySql(String sql) {
         if (config.showSql) {
             log.info("执行SQL: {}", sql);
         }

@@ -14,7 +14,7 @@
    <groupId>sunyu.util</groupId>
    <artifactId>util-tdengine</artifactId>
     <!-- {taos-jdbcdriver.version}_{util.version}_{jdk.version}_{architecture.version} -->
-    <version>3.8.0_1.0_jdk8_x64</version>
+    <version>3.8.0_1.1_jdk8_x64</version>
    <classifier>shaded</classifier>
 </dependency>
 ```
@@ -102,7 +102,7 @@ public class TestTDengineUtil {
     void createDatabase() {
         String sql = "CREATE DATABASE IF NOT EXISTS `db_test`";
         TDengineUtil tdengineUtil = TDengineUtil.builder().dataSource(getDataSource()).build();
-        tdengineUtil.executeUpdate(sql);
+        tdengineUtil.executeSql(sql);
         tdengineUtil.close();
     }
 
@@ -110,7 +110,7 @@ public class TestTDengineUtil {
     void createSTable() {
         String sql = "CREATE STABLE IF NOT EXISTS `db_test`.`stb_test` (c1 TIMESTAMP,c2 VARCHAR(100),c3 INT,c4 FLOAT) TAGS (t1 VARCHAR(50))";
         TDengineUtil tdengineUtil = TDengineUtil.builder().dataSource(getDataSource()).build();
-        tdengineUtil.executeUpdate(sql);
+        tdengineUtil.executeSql(sql);
         tdengineUtil.close();
     }
 
@@ -165,7 +165,7 @@ public class TestTDengineUtil {
             row.put("t1", "tag" + i);
             tdengineUtil.asyncInsertRow("db_test", "stb_test", "tb_test" + i, row);//异步插入
         }
-        tdengineUtil.awaitAllTasks();//等待所有任务完成
+        tdengineUtil.await();//等待所有任务完成
 
         tdengineUtil.close();
     }
@@ -187,7 +187,7 @@ public class TestTDengineUtil {
             tagValue.put("t1", "tag" + i);
             tdengineUtil.asyncInsertRow("db_test", "stb_test", "tb_test" + i, rowValue, tagValue);//异步插入
         }
-        tdengineUtil.awaitAllTasks();//等待所有任务完成
+        tdengineUtil.await();//等待所有任务完成
 
         tdengineUtil.close();
     }
