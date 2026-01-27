@@ -13,6 +13,7 @@ import sunyu.util.TDengineUtil;
 import sunyu.util.test.config.ConfigProperties;
 
 import java.util.HashMap;
+import java.util.Map;
 
 public class TestTDengineUtil {
     Log log = LogFactory.get();
@@ -44,8 +45,8 @@ public class TestTDengineUtil {
 
     @Test
     void t002() {
-        DateTime dt = new DateTime("2026-01-21 00:00:00");
-        for (int i = 0; i < 20000; i++) {
+        DateTime dt = new DateTime("2026-01-20 00:00:00");
+        for (int i = 0; i < 80000; i++) {
             tDengineUtil.appendInsert("frequent", "d_p", "test", new HashMap<String, Object>() {{
                 put("3014", dt.offset(DateField.SECOND, 1));
                 put("protocol", "xxx");
@@ -53,6 +54,13 @@ public class TestTDengineUtil {
             }});
         }
         tDengineUtil.await();
+    }
+
+    @Test
+    void t003() {
+        for (Map<String, Object> showDatabases : tDengineUtil.querySql("show databases")) {
+            log.info("show databases: " + showDatabases);
+        }
     }
 
 }

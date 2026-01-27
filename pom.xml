@@ -7,7 +7,7 @@
     <groupId>sunyu.util</groupId>
     <artifactId>util-tdengine</artifactId>
     <!-- {taos-jdbcdriver.version}_{util.version}_{jdk.version}_{architecture.version} -->
-    <version>3.8.0_1.1_jdk8_x64</version>
+    <version>3.8.0_1.2_jdk8_x64</version>
 
     <properties>
         <java.version>1.8</java.version>
@@ -41,10 +41,30 @@
         <dependency>
             <groupId>com.taosdata.jdbc</groupId>
             <artifactId>taos-jdbcdriver</artifactId>
-            <!-- 数据库版本和驱动对应关系 -->
-            <!-- https://docs.taosdata.com/reference/connector/java/ -->
-            <!--<version>3.4.0</version>-->
             <version>3.8.0</version>
+            <classifier>shaded</classifier>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.netty</groupId>
+                    <artifactId>netty-all</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.datatype</groupId>
+                    <artifactId>jackson-datatype-jsr310</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpclient</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- https://central.sonatype.com/artifact/com.zaxxer/HikariCP/versions -->
         <dependency>
