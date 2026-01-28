@@ -7,7 +7,7 @@
     <groupId>sunyu.util</groupId>
     <artifactId>util-tdengine</artifactId>
     <!-- {taos-jdbcdriver.version}_{util.version}_{jdk.version}_{architecture.version} -->
-    <version>3.8.0_1.2_jdk8_x64</version>
+    <version>3.8.0_1.7_jdk8_x64</version>
 
     <properties>
         <java.version>1.8</java.version>
@@ -36,6 +36,7 @@
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
             <version>5.8.43</version>
+            <optional>true</optional>
         </dependency>
         <!-- https://central.sonatype.com/artifact/com.taosdata.jdbc/taos-jdbcdriver/versions -->
         <dependency>
@@ -43,28 +44,6 @@
             <artifactId>taos-jdbcdriver</artifactId>
             <version>3.8.0</version>
             <classifier>shaded</classifier>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.netty</groupId>
-                    <artifactId>netty-all</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-databind</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.datatype</groupId>
-                    <artifactId>jackson-datatype-jsr310</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.httpcomponents</groupId>
-                    <artifactId>httpclient</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <!-- https://central.sonatype.com/artifact/com.zaxxer/HikariCP/versions -->
         <dependency>
@@ -85,7 +64,7 @@
     <build>
         <plugins>
             <!--
-            https://central.sonatype.com/artifact/org.apache.maven.plugins/maven-shade-plugin/versions -->
+        https://central.sonatype.com/artifact/org.apache.maven.plugins/maven-shade-plugin/versions -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -99,36 +78,23 @@
                         <configuration>
                             <!-- 禁用 dependency-reduced-pom.xml 文件生成 -->
                             <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <!-- 重命名包：批量给第三方包加统一前缀 -->
                             <relocations>
-                                <!-- 重命名Hutool包 -->
                                 <relocation>
-                                    <pattern>cn.hutool</pattern>
-                                    <shadedPattern>sunyu.util.relocations.tdengine.cn.hutool</shadedPattern>
-                                </relocation>
-                                <!-- 重命名Jackson包 -->
-                                <relocation>
-                                    <pattern>com.fasterxml</pattern>
-                                    <shadedPattern>sunyu.util.relocations.tdengine.com.fasterxml</shadedPattern>
-                                </relocation>
-                                <!-- 重命名Google包 -->
-                                <relocation>
-                                    <pattern>com.google</pattern>
-                                    <shadedPattern>sunyu.util.relocations.tdengine.com.google</shadedPattern>
-                                </relocation>
-                                <!-- 重命名Apache包 -->
-                                <relocation>
-                                    <pattern>org.apache</pattern>
-                                    <shadedPattern>sunyu.util.relocations.tdengine.org.apache</shadedPattern>
-                                </relocation>
-                                <!-- 重命名Netty包 -->
-                                <relocation>
-                                    <pattern>io.netty</pattern>
-                                    <shadedPattern>sunyu.util.relocations.tdengine.io.netty</shadedPattern>
-                                </relocation>
-                                <!-- 重命名Project Reactor -->
-                                <relocation>
-                                    <pattern>reactor</pattern>
-                                    <shadedPattern>sunyu.util.relocations.tdengine.reactor</shadedPattern>
+                                    <!-- 基础匹配（这里用空或通配思路，核心靠includes限定） -->
+                                    <pattern></pattern>
+                                    <!-- 统一前缀：所有匹配的包都会被加到这个路径下 -->
+                                    <shadedPattern>relocations.${groupId}.</shadedPattern>
+                                    <!-- 重命名所有包 -->
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                    <!-- 不需要重命名的包 -->
+                                    <excludes>
+                                        <exclude>META-INF/**</exclude>
+                                        <exclude>mozilla/**</exclude>
+                                        <exclude>${groupId}.**</exclude>
+                                    </excludes>
                                 </relocation>
                             </relocations>
                             <transformers>
@@ -158,9 +124,6 @@
                                         <exclude>META-INF/*.SF</exclude>
                                         <exclude>META-INF/*.DSA</exclude>
                                         <exclude>META-INF/*.RSA</exclude>
-                                        <!-- 排除重复的NOTICE文件 -->
-                                        <exclude>META-INF/NOTICE*</exclude>
-                                        <exclude>META-INF/LICENSE*</exclude>
                                     </excludes>
                                 </filter>
                             </filters>
