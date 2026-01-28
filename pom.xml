@@ -7,7 +7,7 @@
     <groupId>sunyu.util</groupId>
     <artifactId>util-tdengine</artifactId>
     <!-- {taos-jdbcdriver.version}_{util.version}_{jdk.version}_{architecture.version} -->
-    <version>3.8.0_1.7_jdk8_x64</version>
+    <version>3.8.0_1.8_jdk8_x64</version>
 
     <properties>
         <java.version>1.8</java.version>
@@ -64,7 +64,7 @@
     <build>
         <plugins>
             <!--
-        https://central.sonatype.com/artifact/org.apache.maven.plugins/maven-shade-plugin/versions -->
+            https://central.sonatype.com/artifact/org.apache.maven.plugins/maven-shade-plugin/versions -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -85,15 +85,17 @@
                                     <pattern></pattern>
                                     <!-- 统一前缀：所有匹配的包都会被加到这个路径下 -->
                                     <shadedPattern>relocations.${groupId}.</shadedPattern>
-                                    <!-- 重命名所有包 -->
+                                    <!-- 重命名包 -->
                                     <includes>
-                                        <include>**</include>
+                                        <include>cn.**</include>
+                                        <include>org.**</include>
+                                        <include>com.**</include>
+                                        <include>io.**</include>
                                     </includes>
                                     <!-- 不需要重命名的包 -->
                                     <excludes>
-                                        <exclude>META-INF/**</exclude>
-                                        <exclude>mozilla/**</exclude>
                                         <exclude>${groupId}.**</exclude>
+                                        <exclude>com.taosdata.**</exclude>
                                     </excludes>
                                 </relocation>
                             </relocations>
