@@ -14,7 +14,7 @@
    <groupId>sunyu.util</groupId>
    <artifactId>util-tdengine</artifactId>
     <!-- {taos-jdbcdriver.version}_{util.version}_{jdk.version}_{architecture.version} -->
-    <version>3.8.0_1.8_jdk8_x64</version>
+    <version>3.8.0_1.9_jdk8_x64</version>
    <classifier>shaded</classifier>
 </dependency>
 ```

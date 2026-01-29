@@ -7,7 +7,7 @@
     <groupId>sunyu.util</groupId>
     <artifactId>util-tdengine</artifactId>
     <!-- {taos-jdbcdriver.version}_{util.version}_{jdk.version}_{architecture.version} -->
-    <version>3.8.0_1.8_jdk8_x64</version>
+    <version>3.8.0_1.9_jdk8_x64</version>
 
     <properties>
         <java.version>1.8</java.version>
@@ -88,15 +88,19 @@
                                     <shadedPattern>relocations.${groupId}.</shadedPattern>
                                     <!-- 重命名包 -->
                                     <includes>
-                                        <include>cn.**</include>
-                                        <include>org.**</include>
-                                        <include>com.**</include>
-                                        <include>io.**</include>
+                                        <include>org.apache.**</include>
+                                        <include>org.slf4j.**</include>
+                                        <include>com.fasterxml.**</include>
+                                        <include>com.google.**</include>
+                                        <include>io.netty.**</include>
+                                        <include>cn.hutool.**</include>
                                     </includes>
                                     <!-- 不需要重命名的包 -->
                                     <excludes>
                                         <exclude>${groupId}.**</exclude>
                                         <exclude>com.taosdata.**</exclude>
+                                        <exclude>uml.tech.**</exclude>
+                                        <exclude>sunyu.**</exclude>
                                     </excludes>
                                 </relocation>
                             </relocations>
