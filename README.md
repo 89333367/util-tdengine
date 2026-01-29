@@ -19,6 +19,16 @@
 </dependency>
 ```
 
+### 如果使用mybatis，那么添加这个配置
+```xml
+<dependency>
+    <groupId>com.taosdata.jdbc</groupId>
+    <artifactId>taos-jdbcdriver</artifactId>
+    <version>3.8.0</version>
+    <classifier>shaded</classifier>
+</dependency>
+```
+
 ### 建议使用的数据源依赖
 
 ```xml
