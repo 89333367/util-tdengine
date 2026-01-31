@@ -7,7 +7,7 @@
     <groupId>sunyu.util</groupId>
     <artifactId>util-tdengine</artifactId>
     <!-- {taos-jdbcdriver.version}_{util.version}_{jdk.version}_{architecture.version} -->
-    <version>3.8.0_1.9_jdk8_x64</version>
+    <version>3.8.0_2.0_jdk8_x64</version>
 
     <properties>
         <java.version>1.8</java.version>
@@ -85,20 +85,31 @@
                                     <!-- 基础匹配（这里用空或通配思路，核心靠includes限定） -->
                                     <pattern></pattern>
                                     <!-- 统一前缀：所有匹配的包都会被加到这个路径下 -->
-                                    <shadedPattern>relocations.${groupId}.</shadedPattern>
+                                    <shadedPattern>relocations.${project.groupId}.</shadedPattern>
                                     <!-- 重命名包 -->
                                     <includes>
                                         <include>org.apache.**</include>
                                         <include>org.slf4j.**</include>
+                                        <include>org.springframework.**</include>
+                                        <include>org.junit.**</include>
+                                        <include>org.latencyutils.**</include>
+                                        <include>org.hdrhistogram.**</include>
+                                        <include>org.jetbrains.**</include>
                                         <include>com.fasterxml.**</include>
                                         <include>com.google.**</include>
                                         <include>io.netty.**</include>
+                                        <include>io.projectreactor.**</include>
+                                        <include>io.zipkin.**</include>
+                                        <include>io.reactivex.**</include>
+                                        <include>javax.enterprise.**</include>
+                                        <include>javax.inject.**</include>
                                         <include>cn.hutool.**</include>
                                     </includes>
                                     <!-- 不需要重命名的包 -->
                                     <excludes>
-                                        <exclude>${groupId}.**</exclude>
+                                        <exclude>${project.groupId}.**</exclude>
                                         <exclude>com.taosdata.**</exclude>
+                                        <exclude>io.lettuce.**</exclude>
                                         <exclude>uml.tech.**</exclude>
                                         <exclude>sunyu.**</exclude>
                                     </excludes>

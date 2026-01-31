@@ -108,7 +108,6 @@ public class TDengineUtil implements AutoCloseable {
             return;
         }
         if (config.insertSqlPre.length() + config.sqlBuilder.length() + sql.length() >= config.maxSqlLength) {
-            // 不可中断的put操作：一直等待直到成功
             executeInsertBatch();
         }
         config.sqlBuilder.append(sql);
