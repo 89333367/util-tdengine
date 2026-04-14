@@ -41,7 +41,7 @@ public class TDengineUtil implements AutoCloseable {
         private DataSource dataSource;
         private final String insertSqlPre = "INSERT INTO";
         private final StringBuilder sqlBuilder = new StringBuilder();
-        private Integer maxSqlLength = 1024 * 1024;
+        private Integer maxSqlLength = 1024 * 1000;
         private Boolean showSql = false;
     }
 
