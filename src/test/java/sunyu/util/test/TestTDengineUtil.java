@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import sunyu.util.TDengineUtil;
 import sunyu.util.test.config.ConfigProperties;
 
+import java.sql.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -127,6 +128,38 @@ public class TestTDengineUtil {
             break;
         }
         log.info("done");
+    }
+
+
+    @Test
+    void 测试时钟() {
+        String sql = "select to_char(_rowts,'yyyyMMddHH24miss') gps_time,_rowts from frequent.d_p where did = 'NJ4GBQSAX0000690' and `3014` between '2026-02-05 08:19:05' and '2026-02-05 08:30:05' limit 1";
+        List<Map<String, Object>> maps = tDengineUtil.querySql(sql);
+        for (Map<String, Object> map : maps) {
+            log.debug("{}", map);
+        }
+    }
+
+    @Test
+    void 测试类型() throws SQLException {
+        HikariConfig config = new HikariConfig();
+        config.setDriverClassName(props.getStr("driverClassName"));
+        config.setJdbcUrl(props.getStr("jdbcUrl"));
+        config.setUsername(props.getStr("username"));
+        config.setPassword(props.getStr("password"));
+        config.setMinimumIdle(0);
+        config.setMaximumPoolSize(10);
+        HikariDataSource ds = new HikariDataSource(config);
+        Connection conn = ds.getConnection();
+        String sql = "select to_char(_rowts,'yyyyMMddHH24miss') gps_time,_rowts from frequent.d_p where did = 'NJ4GBQSAX0000690' and `3014` between '2026-02-05 08:19:05' and '2026-02-05 08:30:05' limit 1";
+        try(PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()){
+            ResultSetMetaData meta = rs.getMetaData();
+            System.out.println("列类型："+meta.getColumnTypeName(1));
+            if(rs.next()){
+                String str = rs.getString("gps_time");
+                System.out.println("rs.getString(gps_time) = "+str);
+            }
+        }
     }
 
 }
